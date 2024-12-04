@@ -32,7 +32,7 @@ def movement_piece(board, x, y):
         return res
 
     def get_movement_rock():
-            res = []
+        res = []
         directions = [(-1,0), (1, 0), (0, -1), (0, 1)]
 
         for dx, dy in directions:
