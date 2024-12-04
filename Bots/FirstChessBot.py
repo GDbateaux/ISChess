@@ -18,10 +18,43 @@ def movement_piece(board, x, y):
     current_color = board[x,y][-1]
 
     def get_movement_pawn():
-        return []
+        res = []
+        moves = [
+             (1, 0)
+        ]
+        for dx, dy in moves:
+            nx, ny = x + dx, y + dy
+            
+            if 0 <= nx < board.shape[0] and 0 <= ny < board.shape[1]:
+                next_new_mov = board[nx, ny]
+                if next_new_mov == '' or next_new_mov[-1] != current_color:
+                    res.append((nx, ny))
+        return res
 
     def get_movement_rock():
-        return []
+            res = []
+        directions = [(-1,0), (1, 0), (0, -1), (0, 1)]
+
+        for dx, dy in directions:
+            i = 1
+            while True:
+                new_x = x + dx * i
+                new_y = y + dy * i
+
+                if 0 <= new_x < board.shape[0] and 0 <= new_y < board.shape[1]:
+                    next_new_mov = board[new_x, new_y]
+                    if next_new_mov == '':
+                        res.append((new_x, new_y))
+                    elif next_new_mov[-1] != current_color:
+                        res.append((new_x, new_y))
+                        break
+                    else:
+                        break
+                else:
+                    break
+                i += 1
+        return res
+        
 
     def get_movement_knight():
         res = []
@@ -67,7 +100,20 @@ def movement_piece(board, x, y):
         return get_movement_rock() + get_movement_bishop()
     
     def get_movement_king():
-        return []
+        res = []
+        moves = [
+            (-1, -1), (-1, 0), (-1, 1),
+            (0, -1),         (0, 1),
+            (1, -1), (1, 0), (1, 1)
+        ]
+        for dx, dy in moves:
+            nx, ny = x + dx, y + dy
+            
+            if 0 <= nx < board.shape[0] and 0 <= ny < board.shape[1]:
+                next_new_mov = board[nx, ny]
+                if next_new_mov == '' or next_new_mov[-1] != current_color:
+                    res.append((nx, ny))
+        return res
     
     match board[x][y][0]:
         case 'p':
