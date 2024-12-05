@@ -1,16 +1,12 @@
-from Bots.ChessBotList import register_chess_bot
-
-def chess_bot(player_sequence, board, time_budget, **kwargs):
-    print(board)
-    color = player_sequence[1]
+def get_movements(board, color):
+    res = []
     for x in range(board.shape[0]):
         for y in range(board.shape[1]):
             if board[x,y] != '' and board[x,y][-1] == color:
-                print(movement_piece(board, x, y))                
-
-    return (0,0), (0,0)
-
-register_chess_bot('FirstBot', chess_bot)
+                piece_moves = movement_piece(board, x, y)
+                for move in piece_moves:
+                    res.append([(x,y), move])
+    return res
 
 def movement_piece(board, x, y):
     if board[x,y] == '':
