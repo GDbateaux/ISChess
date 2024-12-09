@@ -32,4 +32,4 @@ def min_max(board: Board, depth):
     
     return best_evaluation, best_move
 
-register_chess_bot('BruteForce', chess_bot)
+register_chess_bot('MinMax', chess_bot)
