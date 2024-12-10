@@ -2,6 +2,7 @@
 
 from PyQt6.QtWidgets import QApplication
 
+from Bots.ChessBotList import CHESS_BOT_LIST
 from ChessArena import ChessArena, ChessApp
 
 
@@ -15,3 +16,6 @@ if __name__ == '__main__':
 
     app = ChessApp()
     app.start()
+
+
+

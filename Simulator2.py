@@ -15,10 +15,10 @@ set_nbr_turn_to_play = 700
 set_max_time_budget = 1.0
 
 set_players_AI = {
-            'w': CHESS_BOT_LIST['AlphaBetaBot'],  # Bot for 'w'
-            'b': CHESS_BOT_LIST['AlphaBetaMemoBot']  # Bot for 'b'
+            'w': CHESS_BOT_LIST['RandomBot'],  # Bot for 'w'
+            'b': CHESS_BOT_LIST['MinMaxBot']  # Bot for 'b'
         }
-set_csv_file = "game_results5.csv"
+set_csv_file = "game_results2.csv"
 
 # Wrap up for QApplication
 class ChessApp(QtWidgets.QApplication):
@@ -353,8 +353,8 @@ class ChessArena(QtWidgets.QWidget):
 # Main execution
 if __name__ == "__main__":
 
-    #Nombre de parties à jouer
-    total_games = 3
+    # Nombre de parties à jouer
+    total_games = 2000
     app = ChessApp()  # Create only one QApplication instance
 
     for game_number in range(total_games):
