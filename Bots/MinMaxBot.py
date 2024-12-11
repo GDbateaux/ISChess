@@ -9,9 +9,8 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     best_move:Move = min_max(board, 3)[1]
     return best_move.get_return_move()
 
-
 def min_max(board: Board, depth):
-    if depth == 0:
+    if depth == 0 or board.is_game_over:
         return evaluate_v2(board), None
 
     is_maximizing = board.board_color_top == board.color_to_play
