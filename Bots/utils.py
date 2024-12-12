@@ -16,6 +16,7 @@ class Board:
         self.board = board
         self.board_color_top = board_color_top
         self.color_to_play = board_color_top
+        self.is_game_over = False
 
     def get_movements(self):
         res = []
@@ -166,6 +167,8 @@ class Board:
         self.board[start_place[0], start_place[1]] = ''
         if self.board[end_place[0], end_place[1]] != '':
             move.captured_piece = self.board[end_place[0], end_place[1]]
+            if move.captured_piece[0] == 'k':
+                self.is_game_over = True
 
         if piece[0] == 'p' and (end_place[0] == 0 or end_place[0] == 7):
             self.board[end_place[0], end_place[1]] = 'q' + piece[-1]
@@ -179,6 +182,8 @@ class Board:
         piece = self.board[end_place[0], end_place[1]]
 
         if move.captured_piece:
+            if move.captured_piece[0] == 'k':
+                self.is_game_over = False
             self.board[end_place[0], end_place[1]] = move.captured_piece
         else:
             self.board[end_place[0], end_place[1]] = ''
