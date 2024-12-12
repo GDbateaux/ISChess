@@ -15,8 +15,8 @@ set_nbr_turn_to_play = 700
 set_max_time_budget = 1.0
 
 set_players_AI = {
-            'w': CHESS_BOT_LIST['AlphaBetaBot'],  # Bot for 'w'
-            'b': CHESS_BOT_LIST['AlphaBetaMemoBot']  # Bot for 'b'
+            'w': CHESS_BOT_LIST['AlphaBeta'],  # Bot for 'w'
+            'b': CHESS_BOT_LIST['AlphaBetaRandom']  # Bot for 'b'
         }
 set_csv_file = "game_results5.csv"
 

@@ -10,10 +10,10 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     start = time.time()
     color = player_sequence[1]
     board: Board = Board(board, color)
-    best_move: Move = alpha_beta_Random(board, float('-inf'), float('inf'), 4,start,time_budget-0.05)[1]
+    best_move: Move = alpha_beta_Random(board, float('-inf'), float('inf'), 4, start, time_budget-0.05)[1]
     return best_move.get_return_move()
 
-def alpha_beta_Random(board: Board, alpha, beta, depth,start_time,time_limit):
+def alpha_beta_Random(board: Board, alpha, beta, depth, start_time, time_limit):
 
     is_maximizing = board.board_color_top == board.color_to_play
     best_evaluation = float('-inf') if is_maximizing else float('inf')
@@ -24,6 +24,7 @@ def alpha_beta_Random(board: Board, alpha, beta, depth,start_time,time_limit):
     counter = size / 2
 
     if time.time() - start_time > time_limit:
+        print("Coup Random")
         test = random.randint(0, size - 1)
         move = list_random[test]
         return best_evaluation, move
@@ -41,7 +42,7 @@ def alpha_beta_Random(board: Board, alpha, beta, depth,start_time,time_limit):
 
 
         board.make_move(move)
-        evaluation, _ = alpha_beta_Random(board, alpha, beta, depth - 1,start_time, time_limit)
+        evaluation, _ = alpha_beta_Random(board, alpha, beta, depth - 1, start_time, time_limit)
         board.undo_move(move)
 
         if is_maximizing:
