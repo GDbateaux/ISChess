@@ -1,7 +1,5 @@
 from Bots.ChessBotList import register_chess_bot
 from .utils import Board, Move
-from .Evaluate import evaluate_v2
-import hashlib
 import time
 import random
 
@@ -30,7 +28,7 @@ def alpha_beta_Random(board: Board, alpha, beta, depth,start_time,time_limit):
 
 
     if depth == 0 or board.is_game_over:
-        return evaluate_v2(board), None
+        return board.evaluate_v2(), None
 
 
     while counter > 0:
