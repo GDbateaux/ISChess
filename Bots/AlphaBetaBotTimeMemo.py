@@ -13,55 +13,54 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     depth = 0
     best_move: Move = Move((0, 0), (0, 0))
 
-    save = [[]]
-
-    def contains(board_list: List[List[object]], board: Board):
-        for test in board_list:
-            if test[0] == board:
-                return True,test
-        return None
-
+    memoization = {}
 
     def alpha_beta(board: Board, alpha, beta, depth, time_limit):
-
-        already_calculated,board_already_calculated = contains(save, board)
+        board_key = hash(board)
 
         if time.time() >= time_limit:
             raise TimeoutError("Time limit exceeded")
 
         if depth == 0 or board.is_game_over:
-            if (already_calculated):
-                return board_already_calculated[1], None
-            else :
-                evaluate = evaluate_v2(board)
-                save.append([board,evaluate])
-                return evaluate_v2(board), None
+            if board_key in memoization:
+                return memoization[board_key], None
+            else:
+                evaluation = evaluate_v2(board)
+                memoization[board_key] = evaluation
+                return evaluation, None
 
         is_maximizing = board.board_color_top == board.color_to_play
         best_evaluation = float('-inf') if is_maximizing else float('inf')
         best_move = None
 
         for move in board.get_movements():
-            board.make_move(move)
-            evaluation, _ = alpha_beta(board, alpha, beta, depth - 1, time_limit)
-            board.undo_move(move)
 
-            if is_maximizing:
-                if evaluation > best_evaluation:
-                    best_evaluation = evaluation
-                    best_move = move
-                alpha = max(alpha, evaluation)
-            elif not is_maximizing:
-                if evaluation < best_evaluation:
-                    best_evaluation = evaluation
-                    best_move = move
-                beta = min(beta, evaluation)
-            if beta < alpha:
-                break
+            board_key_with_depth = (hash(board), depth)
 
-        return best_evaluation, best_move
+            if board_key_with_depth in memoization:
+                evaluation, _ = memoization[board_key_with_depth]
 
+            else:
 
+                board.make_move(move)
+                evaluation, _ = alpha_beta(board, alpha, beta, depth - 1, time_limit)
+                board.undo_move(move)
+
+                if is_maximizing:
+                    if evaluation > best_evaluation:
+                        best_evaluation = evaluation
+                        best_move = move
+                    alpha = max(alpha, evaluation)
+                elif not is_maximizing:
+                    if evaluation < best_evaluation:
+                        best_evaluation = evaluation
+                        best_move = move
+                    beta = min(beta, evaluation)
+                if beta < alpha:
+                    break
+
+            memoization[board_key_with_depth] = (best_evaluation, best_move)
+            return best_evaluation, best_move
 
     while (time_limit > time.time()):
         depth += 1
@@ -73,7 +72,6 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
 
     print(depth)
     return best_move.get_return_move()
-
 
 
 register_chess_bot('AlphaBetaBotTimeMemo', chess_bot)
