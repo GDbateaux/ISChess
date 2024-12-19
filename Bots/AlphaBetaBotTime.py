@@ -6,7 +6,6 @@ import time
 
 
 def chess_bot(player_sequence, board, time_budget, **kwargs):
-    print(player_sequence)
     time_limit = time.time() + time_budget * 0.95
     color = player_sequence[1]
     board: Board = Board(board, color)
@@ -20,7 +19,6 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         except TimeoutError:
             depth -= 1
             break
-        
     print(depth)
     return best_move.get_return_move()
 

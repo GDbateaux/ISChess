@@ -1,7 +1,6 @@
 from Bots.ChessBotList import register_chess_bot
 from Bots.utils import Board, Move
 from Bots.Evaluate import evaluate_v2
-from typing import List
 import time
 import csv
 import os
@@ -9,7 +8,6 @@ import os
 
 
 def chess_bot(player_sequence, board, time_budget, **kwargs):
-
     #Pour les stats
     counter_leaf = 0
     csv_file = 'stat_result.csv'
@@ -20,10 +18,6 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         # Si le fichier n'existe pas, ajoutez l'en-tête
         if not file_exists:
             writer.writerow(['Player_Bot', 'Profondeur', 'Temps_recursion', 'Nb de Feuilles'])
-
-
-
-    print(player_sequence)
 
     time_limit = time.time() + time_budget * 0.95
     color = player_sequence[1]
@@ -38,22 +32,21 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         nonlocal counter_leaf
 
         board_key = board.get_board_state()
-        board_key_with_evaluate = (board_key, board.color_to_play)
 
         if time.time() >= time_limit:
             raise TimeoutError("Time limit exceeded")
 
         if depth == 0 or board.is_game_over:
-            if board_key_with_evaluate in memoization:
+            if board_key in memoization:
                 #print("Use save evaluate")
-                return memoization[board_key_with_evaluate], None
+                return memoization[board_key], None
             else:
+                counter_leaf += 1
                 evaluation = evaluate_v2(board)
                 # Pour les stats
-                counter_leaf += 1
 
                 #print("Save evaluate")
-                memoization[board_key_with_evaluate] = evaluation
+                memoization[board_key] = evaluation
                 return evaluation, None
 
         is_maximizing = board.board_color_top == board.color_to_play
@@ -63,16 +56,9 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         board_key_with_depth = (board_key, depth, board.color_to_play)
 
         if board_key_with_depth in memoization:
-            #print(memoization[board_key_with_depth])
-            evaluation, _ = memoization[board_key_with_depth]
-
-        else :
-            #print("Save sub-trees")
-
-
+            best_evaluation, best_move = memoization[board_key_with_depth]
+        else:
             for move in board.get_movements():
-
-
                 board.make_move(move)
                 evaluation, _ = alpha_beta(board, alpha, beta, depth - 1, time_limit)
                 board.undo_move(move)
@@ -89,7 +75,6 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
                     beta = min(beta, evaluation)
                 if beta < alpha:
                     break
-
             memoization[board_key_with_depth] = (best_evaluation, best_move)
 
         return best_evaluation, best_move
@@ -113,17 +98,11 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             break
 
 
-
-
-
-
-
     print("depth max :"+str(depth))
 
 
 
 
     return best_move.get_return_move()
-
 
 register_chess_bot('AlphaBetaBotTimeMemo', chess_bot)
