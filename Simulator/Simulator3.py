@@ -376,8 +376,8 @@ if __name__ == "__main__":
     set_max_time_budget = 1.0
 
     set_player = {
-                'w': CHESS_BOT_LIST['RandomBot'],  # Bot for 'w'
-                'b': CHESS_BOT_LIST['MinMaxBot']  # Bot for 'b'
+                'w': CHESS_BOT_LIST['AlphaBetaBotTime'],  # Bot for 'w'
+                'b': CHESS_BOT_LIST['AlphaBetaBotTimeSortMov']  # Bot for 'b'
             }
     set_csv_file = "game_results2.csv"
 
@@ -391,7 +391,7 @@ if __name__ == "__main__":
             data = convert_from_fen(l)
 
             print(f"Starting game {game_number + 1} of {total_games}")
-            app.start(data)  # Start each game sequentially
+            app.start(data, set_player)  # Start each game sequentially
 
     print("Finished all games.")
 

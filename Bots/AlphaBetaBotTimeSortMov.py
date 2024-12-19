@@ -2,32 +2,31 @@ from Bots.ChessBotList import register_chess_bot
 from .utils import Board, Move, orderMoves
 
 import time
-import csv
 
 
 num_leaf_visited = 0
-cache = {}
-#cache.contains((new State(board,depth,player)
 
 def chess_bot(player_sequence, board, time_budget, **kwargs):
+    global num_leaf_visited
+    num_leaf_visited = 0
     time_limit = time.time() + time_budget * 0.95
     color = player_sequence[1]
     board: Board = Board(board, color)
-    depth = 3
+    depth = 0
     best_move:Move = Move((0,0), (0,0))
 
+    print('time sort:')
     while(time_limit > time.time()):
-        #depth += 1
+        depth += 1
         try:
             best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]
+            print(f'depth {depth}: {num_leaf_visited}')
+            num_leaf_visited = 0
         except TimeoutError:
-            #depth -= 1
+            depth -= 1
             break
         
     print(depth)
-    with open('alphabetatimesortmove2.csv', mode='a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow([num_leaf_visited])
     print(num_leaf_visited)
     return best_move.get_return_move()
 

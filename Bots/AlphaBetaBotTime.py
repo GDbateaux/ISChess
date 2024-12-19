@@ -7,16 +7,20 @@ import time
 num_leaf_visited = 0
 
 def chess_bot(player_sequence, board, time_budget, **kwargs):
+    global num_leaf_visited
+    num_leaf_visited = 0
     time_limit = time.time() + time_budget * 0.95
     color = player_sequence[1]
     board: Board = Board(board, color)
-    depth = 1
+    depth = 0
     best_move:Move = Move((0,0), (0,0))
-
+    print('time:')
     while(time_limit > time.time()):
         depth += 1
         try:
             best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]
+            print(f'depth {depth}: {num_leaf_visited}')
+            num_leaf_visited = 0
         except TimeoutError:
             depth -= 1
             break
