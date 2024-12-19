@@ -1,6 +1,5 @@
 from Bots.ChessBotList import register_chess_bot
-from Bots.utils import Board, Move
-from Bots.Evaluate import evaluate_v2
+from .utils import Board, Move
 
 
 def chess_bot(player_sequence, board, time_budget, **kwargs):
@@ -10,6 +9,9 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     return best_move.get_return_move()
 
 def alpha_beta(board: Board, alpha, beta, depth):
+    if depth == 0 or board.is_game_over:
+        return board.evaluate_v2(), None
+
     is_maximizing = board.board_color_top == board.color_to_play
     best_evaluation = float('-inf') if is_maximizing else float('inf')
     best_move = None

@@ -2,14 +2,17 @@ import csv
 
 from Bots.ChessBotList import register_chess_bot
 from .utils import Board, Move
-from .Evaluate import evaluate_v2
 
 import time
 import csv
 import os
 
 
+num_leaf_visited = 0
+
 def chess_bot(player_sequence, board, time_budget, **kwargs):
+    global num_leaf_visited
+    num_leaf_visited = 0
     # Pour les stats
     counter_leaf = 0
 
@@ -28,6 +31,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     board: Board = Board(board, color)
     depth = 0
     best_move:Move = Move((0,0), (0,0))
+    print('time:')
 
     def alpha_beta(board: Board, alpha, beta, depth, time_limit):
         # Pour les stats
@@ -39,7 +43,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         if depth == 0 or board.is_game_over:
             counter_leaf += 1
 
-            return evaluate_v2(board), None
+            return board.evaluate_v2(), None
 
         is_maximizing = board.board_color_top == board.color_to_play
         best_evaluation = float('-inf') if is_maximizing else float('inf')
@@ -71,6 +75,8 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             start = time.time()
 
             best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]
+            print(f'depth {depth}: {num_leaf_visited}')
+            num_leaf_visited = 0
 
             # Pour les stats
             with open(csv_file, mode='a', newline='') as file:
@@ -84,6 +90,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             break
         
     print(depth)
+    print(num_leaf_visited)
     return best_move.get_return_move()
 
 register_chess_bot('AlphaBetaBotTime', chess_bot)
