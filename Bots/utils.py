@@ -374,6 +374,16 @@ class Board:
                     result += (piece_values[type_piece] + table[x][y]) * coef
         return result
 
+    def get_board_state(self):
+        """
+        Retourne une représentation immuable de l'état du plateau et du joueur à jouer.
+        """
+        # Convertir le plateau en une structure immuable (tuple de tuples)
+        board_state = tuple(tuple(row) for row in self.board)
+        # Inclure la couleur du joueur à jouer
+        return board_state, self.color_to_play
+
+
 def orderMoves(moves: list[Move], board: Board, is_maximizing: bool):
     def evaluate_move(move: Move):
         board.make_move(move)
@@ -382,12 +392,3 @@ def orderMoves(moves: list[Move], board: Board, is_maximizing: bool):
         return evaluation
 
     return sorted(moves, key=evaluate_move, reverse=is_maximizing)
-
-def get_board_state(self):
-    """
-    Retourne une représentation immuable de l'état du plateau et du joueur à jouer.
-    """
-    # Convertir le plateau en une structure immuable (tuple de tuples)
-    board_state = tuple(tuple(row) for row in self.board)
-    # Inclure la couleur du joueur à jouer
-    return board_state, self.color_to_play

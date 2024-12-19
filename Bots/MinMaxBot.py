@@ -29,5 +29,4 @@ def min_max(board: Board, depth):
 
     return best_evaluation, best_move
 
-
 register_chess_bot('MinMaxBot', chess_bot)
