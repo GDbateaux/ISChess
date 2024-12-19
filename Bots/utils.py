@@ -1,15 +1,16 @@
 class Move:
-    def __init__(self, start_pos, end_pos, is_promotion = False, captured_piece=None):
+    def __init__(self, start_pos, end_pos, is_promotion=False, captured_piece=None):
         self.start_pos = start_pos
         self.end_pos = end_pos
         self.is_promotion = is_promotion
         self.captured_piece = captured_piece
-    
+
     def __repr__(self):
         return f"Move(start={self.start_pos}, end={self.end_pos}, promotion={self.is_promotion}, captured_piece={self.captured_piece})"
 
     def get_return_move(self):
         return self.start_pos, self.end_pos
+
 
 class Board:
     def __init__(self, board, board_color_top):
@@ -23,26 +24,26 @@ class Board:
 
         for x in range(self.board.shape[0]):
             for y in range(self.board.shape[1]):
-                if self.board[x,y] != '' and self.board[x,y][-1] == self.color_to_play:
+                if self.board[x, y] != '' and self.board[x, y][-1] == self.color_to_play:
                     piece_moves = self.movement_piece(x, y)
                     for move in piece_moves:
                         res.append(move)
         return res
 
     def movement_piece(self, x, y):
-        if self.board[x,y] == '':
+        if self.board[x, y] == '':
             return []
-        current_color = self.board[x,y][-1]
+        current_color = self.board[x, y][-1]
 
         def get_movement_pawn():
             res = []
             if x + 1 >= self.board.shape[0]:
                 return res
-            
+
             pawn_dir = 1
             if self.board_color_top != current_color:
                 pawn_dir = -1
-            
+
             new_x = x + pawn_dir
             is_promotion = False
             if new_x == 0 or new_x == self.board.shape[0] - 1:
@@ -52,15 +53,15 @@ class Board:
                 if 0 <= new_y < self.board.shape[1]:
                     if i == 1:
                         if self.board[new_x, new_y] == '':
-                            res.append(Move((x,y), (new_x, new_y), is_promotion))
+                            res.append(Move((x, y), (new_x, new_y), is_promotion))
                     else:
                         if self.board[new_x, new_y] != '' and self.board[new_x, new_y][-1] != current_color:
-                            res.append(Move((x,y), (new_x, new_y), is_promotion))
+                            res.append(Move((x, y), (new_x, new_y), is_promotion))
             return res
 
         def get_movement_rook():
             res = []
-            directions = [(-1,0), (1, 0), (0, -1), (0, 1)]
+            directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
             for dx, dy in directions:
                 i = 1
@@ -71,9 +72,9 @@ class Board:
                     if 0 <= new_x < self.board.shape[0] and 0 <= new_y < self.board.shape[1]:
                         next_new_mov = self.board[new_x, new_y]
                         if next_new_mov == '':
-                            res.append(Move((x,y), (new_x, new_y)))
+                            res.append(Move((x, y), (new_x, new_y)))
                         elif next_new_mov[-1] != current_color:
-                            res.append(Move((x,y), (new_x, new_y)))
+                            res.append(Move((x, y), (new_x, new_y)))
                             break
                         else:
                             break
@@ -81,7 +82,6 @@ class Board:
                         break
                     i += 1
             return res
-
 
         def get_movement_knight():
             res = []
@@ -89,19 +89,19 @@ class Board:
                 (-2, -1), (-2, 1), (2, -1), (2, 1),
                 (-1, -2), (1, -2), (-1, 2), (1, 2)
             ]
-            
+
             for dx, dy in moves:
                 nx, ny = x + dx, y + dy
-                
+
                 if 0 <= nx < self.board.shape[0] and 0 <= ny < self.board.shape[1]:
                     next_new_mov = self.board[nx, ny]
                     if next_new_mov == '' or next_new_mov[-1] != current_color:
-                        res.append(Move((x,y), (nx, ny)))
+                        res.append(Move((x, y), (nx, ny)))
             return res
-        
+
         def get_movement_bishop():
             res = []
-            directions = [(-1,-1), (-1, 1), (1, -1), (1, 1)]
+            directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
             for dx, dy in directions:
                 i = 1
@@ -112,9 +112,9 @@ class Board:
                     if 0 <= new_x < self.board.shape[0] and 0 <= new_y < self.board.shape[1]:
                         next_new_mov = self.board[new_x, new_y]
                         if next_new_mov == '':
-                            res.append(Move((x,y), (new_x, new_y)))
+                            res.append(Move((x, y), (new_x, new_y)))
                         elif next_new_mov[-1] != current_color:
-                            res.append(Move((x,y), (new_x, new_y)))
+                            res.append(Move((x, y), (new_x, new_y)))
                             break
                         else:
                             break
@@ -122,15 +122,15 @@ class Board:
                         break
                     i += 1
             return res
-        
+
         def get_movement_queen():
             return get_movement_rook() + get_movement_bishop()
-        
+
         def get_movement_king():
             res = []
             moves = [
                 (-1, -1), (-1, 0), (-1, 1),
-                (0, -1),         (0, 1),
+                (0, -1), (0, 1),
                 (1, -1), (1, 0), (1, 1)
             ]
             for dx, dy in moves:
@@ -139,9 +139,9 @@ class Board:
                 if 0 <= nx < self.board.shape[0] and 0 <= ny < self.board.shape[1]:
                     next_new_mov = self.board[nx, ny]
                     if next_new_mov == '' or next_new_mov[-1] != current_color:
-                        res.append(Move((x,y), (nx, ny)))
+                        res.append(Move((x, y), (nx, ny)))
             return res
-        
+
         match self.board[x][y][0]:
             case 'p':
                 return get_movement_pawn()
@@ -158,7 +158,7 @@ class Board:
             case _:
                 print('no valid piece')
                 return []
-            
+
     def make_move(self, move: Move):
         start_place = move.start_pos
         end_place = move.end_pos
@@ -187,7 +187,7 @@ class Board:
             self.board[end_place[0], end_place[1]] = move.captured_piece
         else:
             self.board[end_place[0], end_place[1]] = ''
-            
+
         if piece[0] == 'q' and move.is_promotion:
             self.board[start_place[0], start_place[1]] = 'p' + piece[-1]
         else:
@@ -382,3 +382,12 @@ def orderMoves(moves: list[Move], board: Board, is_maximizing: bool):
         return evaluation
 
     return sorted(moves, key=evaluate_move, reverse=is_maximizing)
+
+def get_board_state(self):
+    """
+    Retourne une représentation immuable de l'état du plateau et du joueur à jouer.
+    """
+    # Convertir le plateau en une structure immuable (tuple de tuples)
+    board_state = tuple(tuple(row) for row in self.board)
+    # Inclure la couleur du joueur à jouer
+    return board_state, self.color_to_play
