@@ -1,10 +1,9 @@
-from PyQt6 import QtCore, QtWidgets, QtGui
+from PyQt6 import QtWidgets, QtGui
 from PyQt6 import uic
 
 from Bots.ChessBotList import *
 from ChessRules import *
 from ParallelPlayer import *
-from Bots import *
 
 import numpy as np
 import csv

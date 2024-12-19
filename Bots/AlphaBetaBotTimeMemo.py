@@ -10,14 +10,15 @@ import os
 def chess_bot(player_sequence, board, time_budget, **kwargs):
     #Pour les stats
     counter_leaf = 0
-    csv_file = 'stat_result.csv'
+    counter_evaluate = 0
+    csv_file = 'stat_result3.csv'
     file_exists = os.path.exists(csv_file)
     with open(csv_file, mode='a', newline='') as file:
         writer = csv.writer(file)
 
         # Si le fichier n'existe pas, ajoutez l'en-tête
         if not file_exists:
-            writer.writerow(['Player_Bot', 'Profondeur', 'Temps_recursion', 'Nb de Feuilles'])
+            writer.writerow(['Player_Bot', 'Profondeur', 'Temps_recursion', 'Nb de Feuilles','Nb d évaluations'])
 
     time_limit = time.time() + time_budget * 0.95
     color = player_sequence[1]
@@ -28,13 +29,20 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     memoization = {}
 
     def alpha_beta(board: Board, alpha, beta, depth, time_limit):
+        # Pour les stats
         nonlocal counter_leaf
+        nonlocal counter_evaluate
+
         board_key = board.get_board_state()
 
         if time.time() >= time_limit:
             raise TimeoutError("Time limit exceeded")
 
         if depth == 0 or board.is_game_over:
+
+
+            counter_leaf += 1
+
             if board_key in memoization:
                 return memoization[board_key][0], None
             else:
@@ -42,7 +50,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
                 evaluation = evaluate_v2(board)
                 memoization[board_key] = (evaluation, None, depth)
                 return evaluation, None
-    
+
         is_maximizing = board.board_color_top == board.color_to_play
         best_evaluation = float('-inf') if is_maximizing else float('inf')
         best_move = None
@@ -82,8 +90,9 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             # Pour les stats
             with open(csv_file, mode='a', newline='') as file:
                 writer = csv.writer(file)
-                writer.writerow(['AlphaBetaBotTimeMemo', str(depth), str(time.time() - start), str(counter_leaf)])
+                writer.writerow(['AlphaBetaBotTimeMemo', str(depth), str(time.time() - start), str(counter_leaf),str(counter_evaluate)])
             counter_leaf = 0
+            counter_evaluate = 0
 
         except TimeoutError:
             depth -= 1

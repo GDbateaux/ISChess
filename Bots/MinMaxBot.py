@@ -4,7 +4,7 @@ from .utils import Board, Move
 def chess_bot(player_sequence, board, time_budget, **kwargs):
     color = player_sequence[1]
     board: Board = Board(board, color)
-    best_move:Move = min_max(board, 3)#, start, time_budget-0.05)[1]
+    best_move: Move = min_max(board, 3)[1]
     return best_move.get_return_move()
 
 def min_max(board: Board, depth):
@@ -17,7 +17,7 @@ def min_max(board: Board, depth):
 
     for move in board.get_movements():
         board.make_move(move)
-        evaluation, _ = min_max(board, depth-1)#, start_time, time_limit)
+        evaluation, _ = min_max(board, depth - 1)
         board.undo_move(move)
 
         if is_maximizing and evaluation > best_evaluation:
@@ -26,7 +26,8 @@ def min_max(board: Board, depth):
         elif not is_maximizing and evaluation < best_evaluation:
             best_evaluation = evaluation
             best_move = move
-    
+
     return best_evaluation, best_move
+
 
 register_chess_bot('MinMaxBot', chess_bot)
