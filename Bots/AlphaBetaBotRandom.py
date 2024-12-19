@@ -1,6 +1,5 @@
 from Bots.ChessBotList import register_chess_bot
-from Bots.utils import Board, Move
-from Bots.Evaluate import evaluate_v2
+from .utils import Board, Move
 import time
 import random
 
@@ -29,7 +28,7 @@ def alpha_beta_Random(board: Board, alpha, beta, depth, start_time, time_limit):
         return best_evaluation, move
 
     if depth == 0 or board.is_game_over:
-        return evaluate_v2(board), None
+        return board.evaluate_v2(), None
 
     while counter > 0:
         size2 = len(list_random)

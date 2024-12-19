@@ -1,6 +1,5 @@
 from Bots.ChessBotList import register_chess_bot
 from Bots.utils import Board, Move
-from Bots.Evaluate import evaluate_v2
 import time
 import csv
 import os
@@ -47,7 +46,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
                 return memoization[board_key][0], None
             else:
                 counter_leaf += 1
-                evaluation = evaluate_v2(board)
+                evaluation = board.evaluate_v2()
                 memoization[board_key] = (evaluation, None, depth)
                 return evaluation, None
 
