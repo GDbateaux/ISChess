@@ -13,7 +13,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     # Pour les stats
     counter_leaf = 0
 
-    csv_file = 'stat_result3.csv'
+    csv_file = 'stat_result.csv'
     file_exists = os.path.exists(csv_file)
     with open(csv_file, mode='a', newline='') as file:
         writer = csv.writer(file)

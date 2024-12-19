@@ -11,7 +11,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     #Pour les stats
     counter_leaf = 0
     counter_evaluate = 0
-    csv_file = 'stat_result3.csv'
+    csv_file = 'stat_result.csv'
     file_exists = os.path.exists(csv_file)
     with open(csv_file, mode='a', newline='') as file:
         writer = csv.writer(file)
@@ -46,7 +46,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             if board_key in memoization:
                 return memoization[board_key][0], None
             else:
-                counter_leaf += 1
+                counter_evaluate += 1
                 evaluation = evaluate_v2(board)
                 memoization[board_key] = (evaluation, None, depth)
                 return evaluation, None
