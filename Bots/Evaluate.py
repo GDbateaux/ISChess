@@ -1,4 +1,5 @@
-from .utils import Board
+from Bots.utils import Board
+
 
 def evaluate(board, color_pos):
     king = 2000.0
@@ -21,7 +22,7 @@ def evaluate(board, color_pos):
 
                 if color_piece != color_pos:
                     coef = -1.0
-                else :
+                else:
                     coef = 1.0
 
                 match type_piece:
@@ -31,13 +32,14 @@ def evaluate(board, color_pos):
                         result += queen * coef
                     case 'b':
                         result += bishop * coef
-                    case 'n' :
+                    case 'n':
                         result += knight * coef
                     case 'r':
                         result += rook * coef
                     case 'p':
                         result += pawn * coef
     return result
+
 
 def evaluate_v2(board: Board):
     king_middle_game_table = [

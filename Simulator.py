@@ -1,10 +1,9 @@
-from PyQt6 import QtCore, QtWidgets, QtGui
+from PyQt6 import QtWidgets, QtGui
 from PyQt6 import uic
 
 from Bots.ChessBotList import *
 from ChessRules import *
 from ParallelPlayer import *
-from Bots import *
 
 import numpy as np
 import csv
@@ -15,7 +14,7 @@ set_nbr_turn_to_play = 700
 set_max_time_budget = 1.0
 
 set_players_AI = {
-            'w': CHESS_BOT_LIST['AlphaBeta'],  # Bot for 'w'
+            'w': CHESS_BOT_LIST['AlphaBetaBotTimeMemo'],  # Bot for 'w'
             'b': CHESS_BOT_LIST['AlphaBetaRandom']  # Bot for 'b'
         }
 set_csv_file = "game_results5.csv"

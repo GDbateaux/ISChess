@@ -6,6 +6,23 @@ import time
 
 
 def chess_bot(player_sequence, board, time_budget, **kwargs):
+
+    #Pour les stats
+    counter_leaf = 0
+    csv_file = 'stat_result.csv'
+    file_exists = os.path.exists(csv_file)
+    with open(csv_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+
+        # Si le fichier n'existe pas, ajoutez l'en-tête
+        if not file_exists:
+            writer.writerow(['Player_Bot', 'Profondeur', 'Temps_recursion', 'Nb de Feuilles'])
+
+
+
+
+
+
     print(player_sequence)
     time_limit = time.time() + time_budget * 0.95
     color = player_sequence[1]
@@ -17,11 +34,12 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         depth += 1
         try:
             best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]
+            print(time.time() - start)
         except TimeoutError:
             depth -= 1
             break
-        
-    print(depth)
+
+
     return best_move.get_return_move()
 
 def alpha_beta(board: Board, alpha, beta, depth, time_limit):
@@ -52,6 +70,8 @@ def alpha_beta(board: Board, alpha, beta, depth, time_limit):
             beta = min(beta, evaluation)
         if beta < alpha:
                 break
+
+
     
     return best_evaluation, best_move
 
