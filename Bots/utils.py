@@ -376,11 +376,8 @@ class Board:
 
 def orderMoves(moves: list[Move], board: Board, is_maximizing: bool):
     def evaluate_move(move: Move):
-        # Applique le mouvement au plateau
         board.make_move(move)
-        # Évalue l'état du plateau après le mouvement
         evaluation = board.evaluate_v2()
-        # Annule le mouvement pour restaurer l'état initial
         board.undo_move(move)
         return evaluation
 

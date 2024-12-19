@@ -24,7 +24,6 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         except TimeoutError:
             depth -= 1
             break
-        
     print(depth)
     print(num_leaf_visited)
     return best_move.get_return_move()

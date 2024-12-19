@@ -372,26 +372,29 @@ class ChessArena(QtWidgets.QWidget):
 # Main execution
 if __name__ == "__main__":
 
-    set_nbr_turn_to_play = 700
+    set_nbr_turn_to_play = 100
     set_max_time_budget = 1.0
 
     set_player = {
                 'w': CHESS_BOT_LIST['AlphaBetaBotTime'],  # Bot for 'w'
                 'b': CHESS_BOT_LIST['AlphaBetaBotTimeSortMov']  # Bot for 'b'
             }
-    set_csv_file = "game_results2.csv"
+    set_csv_file = "game_results.csv"
 
     # Nombre de parties à jouer
-    total_games = 2000
+    total_games = 10
     app = ChessApp()  # Create only one QApplication instance
     game_number = 0
 
     with open(current_file.parent / 'position.txt') as file:
-        for l in file.readlines():
+        for i, l in enumerate(file.readlines()):
+            if i >= total_games:
+                break
             data = convert_from_fen(l)
 
             print(f"Starting game {game_number + 1} of {total_games}")
             app.start(data, set_player)  # Start each game sequentially
+            game_number += 1
 
     print("Finished all games.")
 
