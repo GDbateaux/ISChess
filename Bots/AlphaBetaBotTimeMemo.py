@@ -28,9 +28,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     memoization = {}
 
     def alpha_beta(board: Board, alpha, beta, depth, time_limit):
-        # Pour les stats
         nonlocal counter_leaf
-
         board_key = board.get_board_state()
 
         if time.time() >= time_limit:
@@ -38,25 +36,19 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
 
         if depth == 0 or board.is_game_over:
             if board_key in memoization:
-                #print("Use save evaluate")
-                return memoization[board_key], None
+                return memoization[board_key][0], None
             else:
                 counter_leaf += 1
                 evaluation = evaluate_v2(board)
-                # Pour les stats
-
-                #print("Save evaluate")
-                memoization[board_key] = evaluation
+                memoization[board_key] = (evaluation, None, depth)
                 return evaluation, None
-
+    
         is_maximizing = board.board_color_top == board.color_to_play
         best_evaluation = float('-inf') if is_maximizing else float('inf')
         best_move = None
 
-        board_key_with_depth = (board_key, depth, board.color_to_play)
-
-        if board_key_with_depth in memoization:
-            best_evaluation, best_move = memoization[board_key_with_depth]
+        if board_key in memoization and memoization[board_key][2] >= depth:
+            best_evaluation, best_move, _ = memoization[board_key]
         else:
             for move in board.get_movements():
                 board.make_move(move)
@@ -75,7 +67,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
                     beta = min(beta, evaluation)
                 if beta < alpha:
                     break
-            memoization[board_key_with_depth] = (best_evaluation, best_move)
+            memoization[board_key] = (best_evaluation, best_move, depth)
 
         return best_evaluation, best_move
 
@@ -96,12 +88,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         except TimeoutError:
             depth -= 1
             break
-
-
     print("depth max :"+str(depth))
-
-
-
 
     return best_move.get_return_move()
 
