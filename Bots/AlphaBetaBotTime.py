@@ -34,12 +34,11 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         depth += 1
         try:
             best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]
-            print(time.time() - start)
         except TimeoutError:
             depth -= 1
             break
-
-
+        
+    print(depth)
     return best_move.get_return_move()
 
 def alpha_beta(board: Board, alpha, beta, depth, time_limit):
@@ -70,8 +69,6 @@ def alpha_beta(board: Board, alpha, beta, depth, time_limit):
             beta = min(beta, evaluation)
         if beta < alpha:
                 break
-
-
     
     return best_evaluation, best_move
 
