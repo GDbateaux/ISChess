@@ -6,6 +6,7 @@ import time
 
 
 def chess_bot(player_sequence, board, time_budget, **kwargs):
+    start = time.time()
     print(player_sequence)
     time_limit = time.time() + time_budget * 0.95
     color = player_sequence[1]
@@ -17,32 +18,33 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
 
     def alpha_beta(board: Board, alpha, beta, depth, time_limit):
         board_key = board.get_board_state()
+        board_key_with_evaluate = (board_key, board.color_to_play)
 
         if time.time() >= time_limit:
             raise TimeoutError("Time limit exceeded")
 
         if depth == 0 or board.is_game_over:
-            if board_key in memoization:
-                print("Use save evaluate")
-                return memoization[board_key], None
+            if board_key_with_evaluate in memoization:
+                #print("Use save evaluate")
+                return memoization[board_key_with_evaluate], None
             else:
                 evaluation = evaluate_v2(board)
-                print("Save evaluate")
-                memoization[board_key] = evaluation
+                #print("Save evaluate")
+                memoization[board_key_with_evaluate] = evaluation
                 return evaluation, None
 
         is_maximizing = board.board_color_top == board.color_to_play
         best_evaluation = float('-inf') if is_maximizing else float('inf')
         best_move = None
 
-        board_key_with_depth = (board_key, depth)
+        board_key_with_depth = (board_key, depth, board.color_to_play)
 
         if board_key_with_depth in memoization:
-            print("Use save sub-trees")
+            #print(memoization[board_key_with_depth])
             evaluation, _ = memoization[board_key_with_depth]
 
         else :
-            print("Save sub-trees")
+            #print("Save sub-trees")
 
 
             for move in board.get_movements():
@@ -73,11 +75,13 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         depth += 1
         try:
             best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]
+            print(time.time() - start)
         except TimeoutError:
             depth -= 1
             break
 
     print(depth)
+
     return best_move.get_return_move()
 
 
