@@ -9,21 +9,26 @@ import os
 
 
 num_leaf_visited = 0
+turn = 0
 
 def chess_bot(player_sequence, board, time_budget, **kwargs):
     global num_leaf_visited
+    global turn
+    turn += 1
     num_leaf_visited = 0
     # Pour les stats
     counter_leaf = 0
 
-    csv_file = 'stat_result.csv'
+    csv_file = 'result.csv'
     file_exists = os.path.exists(csv_file)
     with open(csv_file, mode='a', newline='') as file:
         writer = csv.writer(file)
 
         # Si le fichier n'existe pas, ajoutez l'en-tête
         if not file_exists:
-            writer.writerow(['Player_Bot', 'Profondeur', 'Temps_recursion', 'Nb de Feuilles', 'Nb d évaluations'])
+            writer.writerow(
+                ['Player_Bot', 'Profondeur', 'Temps_recursion', 'Nb de Feuilles', 'Nb d évaluations', 'Time budget',
+                 'turn'])
 
     print(player_sequence)
     time_limit = time.time() + time_budget * 0.95
@@ -82,7 +87,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             with open(csv_file, mode='a', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(['AlphaBetaBotTime', str(depth), str(time.time() - start), str(counter_leaf),
-                                 str(counter_leaf)])
+                                 str(counter_leaf),str(time_budget),str(turn)])
             counter_leaf = 0
 
         except TimeoutError:
