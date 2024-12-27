@@ -91,7 +91,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             # Pour les stats
             with open(csv_file, mode='a', newline='') as file:
                 writer = csv.writer(file)
-                writer.writerow(['AlphaBetaBotTimeMemo', str(depth), str(time.time() - start), str(counter_leaf),str(counter_evaluate),str(counter_leaf),str(time_budget),str(turn)])
+                writer.writerow(['AlphaBetaBotTimeMemo', str(depth), str(time.time() - start), str(counter_leaf),str(counter_evaluate),str(time_budget),str(turn)])
             counter_leaf = 0
             counter_evaluate = 0
 
