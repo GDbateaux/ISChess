@@ -1,8 +1,12 @@
+
+
 from Bots.ChessBotList import register_chess_bot
 from .utils import Board, Move
 import time
 import csv
 import os
+import random
+
 
 num_leaf_visited = 0
 turn = 0
@@ -15,6 +19,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     num_leaf_visited = 0
     # Pour les stats
     counter_leaf = 0
+    fail = False
 
     csv_file = 'result.csv'
     file_exists = os.path.exists(csv_file)
@@ -25,7 +30,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         if not file_exists:
             writer.writerow(
                 ['Player_Bot', 'Profondeur', 'Temps_recursion', 'Nb de Feuilles', 'Nb d évaluations', 'Time budget',
-                 'turn'])
+                 'turn','Fail'])
 
     print(player_sequence)
     time_limit = time.time() + time_budget * 0.95
@@ -34,9 +39,17 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     color = player_sequence[1]
     board: Board = Board(board, color)
 
-    def min_max(board: Board, depth):
+    def min_max(board: Board, depth, start_time, time_limit):
         # Pour les stats
         nonlocal counter_leaf
+        nonlocal fail
+
+        counter_depth = depth
+
+        list_random = board.get_movements().copy()
+        size = len(list_random)
+        counter = size / 2
+
 
 
 
@@ -49,9 +62,18 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         best_evaluation = float('-inf') if is_maximizing else float('inf')
         best_move = None
 
+        if time.time() - start_time > time_limit:
+            print("Coup Random")
+            fail = True
+            test = random.randint(0, size - 1)
+            move = list_random[test]
+            return best_evaluation, move
+
+
+
         for move in board.get_movements():
             board.make_move(move)
-            evaluation, _ = min_max(board, depth - 1)
+            evaluation, _ = min_max(board, depth - 1, start_time, time_limit)
             board.undo_move(move)
 
             if is_maximizing and evaluation > best_evaluation:
@@ -64,14 +86,14 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         return best_evaluation, best_move
 
     start = time.time()
-    depth = 3
-    best_move: Move = min_max(board, depth)[1]
+    depth = 4
+    best_move: Move = min_max(board, depth, start,time_budget - 0.05)[1]
 
     # Pour les stats
     with open(csv_file, mode='a', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['MinMaxBot', str(depth), str(time.time() - start), str(counter_leaf),
-                         str(counter_leaf), str(time_budget), str(turn)])
+                         str(counter_leaf), str(time_budget), str(turn),str(fail)])
     counter_leaf = 0
 
     return best_move.get_return_move()

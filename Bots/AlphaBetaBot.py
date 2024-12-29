@@ -1,14 +1,17 @@
 import csv
 import os
 import time
+import random
 
 from Bots.ChessBotList import register_chess_bot
 from .utils import Board, Move
 turn = 0
 
+
 def chess_bot(player_sequence, board, time_budget, **kwargs):
     # Pour les stats
     global turn
+    fail = False
     turn += 1
     counter_leaf = 0
     counter_depth = 0
@@ -21,11 +24,16 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         if not file_exists:
             writer.writerow(
                 ['Player_Bot', 'Profondeur', 'Temps_recursion', 'Nb de Feuilles', 'Nb d évaluations', 'Time budget',
-                 'turn'])
+                 'turn','Fail'])
 
-    def alpha_beta(board: Board, alpha, beta, depth):
+    def alpha_beta(board: Board, alpha, beta, depth, start_time, time_limit):
         # Pour les stats
         nonlocal counter_leaf
+        nonlocal fail
+
+        list_random = board.get_movements().copy()
+        size = len(list_random)
+        counter = size / 2
 
         if depth == 0 or board.is_game_over:
             counter_leaf += 1
@@ -36,9 +44,17 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         best_evaluation = float('-inf') if is_maximizing else float('inf')
         best_move = None
 
+        if time.time() - start_time > time_limit:
+            print("Coup Random")
+            fail = True
+            test = random.randint(0, size - 1)
+            move = list_random[test]
+            return best_evaluation, move
+
+
         for move in board.get_movements():
             board.make_move(move)
-            evaluation, _ = alpha_beta(board, alpha, beta, depth - 1)
+            evaluation, _ = alpha_beta(board, alpha, beta, depth - 1, start_time, time_limit)
             board.undo_move(move)
 
             if is_maximizing:
@@ -57,16 +73,16 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         return best_evaluation, best_move
 
     start = time.time()
-    depth = 3
+    depth = 4
     color = player_sequence[1]
     board: Board = Board(board, color)
-    best_move: Move = alpha_beta(board, float('-inf'), float('inf'), depth)[1]
+    best_move: Move = alpha_beta(board, float('-inf'), float('inf'), depth,start,time_budget - 0.05)[1]
 
     # Pour les stats
     with open(csv_file, mode='a', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['AlphaBetaBot', str(depth), str(time.time() - start), str(counter_leaf),
-                         str(counter_leaf), str(time_budget), str(turn)])
+                         str(counter_leaf), str(time_budget), str(turn),str(fail)])
     counter_leaf = 0
 
 
