@@ -18,7 +18,111 @@ class Board:
         self.board_color_top = board_color_top
         self.color_to_play = board_color_top
         self.is_game_over = False
+        self.piece_values = {
+            'k': 8000.0,
+            'q': 900.0,
+            'r': 500.0,
+            'b': 320.0,
+            'n': 300.0,
+            'p': 100.0
+        }
+        self.piece_encoding = {
+            '': '0',
+            'pw': '1', 'nw': '2', 'bw': '3', 'rw': '4', 'qw': '5', 'kw': '6',
+            'pb': '7', 'nb': '8', 'bb': '9', 'rb': 'A', 'qb': 'B', 'kb': 'C'
+        }
+        self.board_key = self.generate_board_key()
+        self.king_pos = self.get_king_positions()
 
+    def generate_board_key(self):
+        key = ""
+        for row in self.board:
+            for piece in row:
+                key = self.piece_encoding.get(piece, '0') + key
+        return int(key, 16)
+    
+    def get_king_positions(self):
+        res = {}
+        for x in range(self.board.shape[0]):
+            for y in range(self.board.shape[1]):
+                if self.board[x, y] and self.board[x, y][0] == 'k':
+                    res[self.board[x, y][1]] = (x,y)
+                if len(res) == 2:
+                    return res
+        return res
+
+    def is_in_check(self, color):
+        king_pos = self.king_pos.get(color)
+        if not king_pos:
+            return False
+
+        x, y = king_pos
+
+        # Vérifier les menaces des pions
+        if self.is_attacked_by_pawn(x, y, color):
+            return True
+        # Vérifier les menaces des cavaliers
+        if self.is_attacked_by_knight(x, y, color):
+            return True
+        # Vérifier les menaces sur les lignes et colonnes (tours et dames)
+        if self.is_attacked_on_line(x, y, color):
+            return True
+        # Vérifier les menaces sur les diagonales (fous et dames)
+        if self.is_attacked_on_diagonal(x, y, color):
+            return True
+        return False
+    
+    def opposite_color(self, color):
+        return 'w' if color == 'b' else 'b'
+
+    def is_attacked_by_pawn(self, x, y, color):
+        direction = -1 if color == self.board_color_top else 1
+        enemy_pawn = 'p' + self.opposite_color(color)
+       
+        for dx, dy in [(-1, direction), (1, direction)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < self.board.shape[0] and 0 <= ny < self.board.shape[1]:
+                if self.board[nx, ny] == enemy_pawn:
+                    return True
+        return False
+
+    def is_attacked_by_knight(self, x, y, color):
+        enemy_knight = 'n' + self.opposite_color(color)
+        knight_moves = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
+
+        for dx, dy in knight_moves:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < self.board.shape[0] and 0 <= ny < self.board.shape[1]:
+                if self.board[nx, ny] == enemy_knight:
+                    return True
+        return False
+
+    def is_attacked_on_line(self, x, y, color):
+        enemy_rook = 'r' + self.opposite_color(color)
+        enemy_queen = 'q' + self.opposite_color(color)
+
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        return self.is_attacked_in_directions(x, y, directions, [enemy_rook, enemy_queen])
+
+    def is_attacked_on_diagonal(self, x, y, color):
+        enemy_bishop = 'b' + self.opposite_color(color)
+        enemy_queen = 'q' + self.opposite_color(color)
+
+        directions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+        return self.is_attacked_in_directions(x, y, directions, [enemy_bishop, enemy_queen])
+
+    def is_attacked_in_directions(self, x, y, directions, attackers):
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            while 0 <= nx < self.board.shape[0] and 0 <= ny < self.board.shape[1]:
+                piece = self.board[nx, ny]
+                if piece:
+                    if piece in attackers:
+                        return True
+                    break
+                nx, ny = nx + dx, ny + dy
+        return False
+    
     def get_movements(self):
         res = []
 
@@ -164,16 +268,25 @@ class Board:
         end_place = move.end_pos
         piece = self.board[start_place[0], start_place[1]]
 
+        self.update_board_key(start_place, piece)
+
         self.board[start_place[0], start_place[1]] = ''
         if self.board[end_place[0], end_place[1]] != '':
             move.captured_piece = self.board[end_place[0], end_place[1]]
+            self.update_board_key(end_place, move.captured_piece)
             if move.captured_piece[0] == 'k':
                 self.is_game_over = True
 
+        piece_add_board_key = piece
         if piece[0] == 'p' and (end_place[0] == 0 or end_place[0] == 7):
-            self.board[end_place[0], end_place[1]] = 'q' + piece[-1]
+            piece_add_board_key = 'q' + piece[-1]
+            self.board[end_place[0], end_place[1]] = piece_add_board_key
         else:
             self.board[end_place[0], end_place[1]] = piece
+        self.update_board_key(end_place, piece_add_board_key)
+
+        if piece[0] == 'k':
+            self.king_pos[piece[1]] = end_place
         self.color_to_play = 'b' if self.color_to_play == 'w' else 'w'
 
     def undo_move(self, move: Move):
@@ -181,19 +294,45 @@ class Board:
         end_place = move.end_pos
         piece = self.board[end_place[0], end_place[1]]
 
+        self.update_board_key(end_place, piece)
+
         if move.captured_piece:
             if move.captured_piece[0] == 'k':
                 self.is_game_over = False
             self.board[end_place[0], end_place[1]] = move.captured_piece
+            self.update_board_key(end_place, move.captured_piece)
         else:
             self.board[end_place[0], end_place[1]] = ''
 
+        piece_add_board_key = piece
         if piece[0] == 'q' and move.is_promotion:
-            self.board[start_place[0], start_place[1]] = 'p' + piece[-1]
+            piece_add_board_key = 'p' + piece[-1]
+            self.board[start_place[0], start_place[1]] = piece_add_board_key
         else:
             self.board[start_place[0], start_place[1]] = piece
+        self.update_board_key(start_place, piece_add_board_key)
+
+        if piece[0] == 'k':
+            self.king_pos[piece[1]] = start_place
         self.color_to_play = 'b' if self.color_to_play == 'w' else 'w'
+
+    def update_board_key(self, pos, piece):
+        if piece == '':
+            return
     
+        shift_amount = (pos[0] * 8 + pos[1]) * 4
+        self.board_key ^= int(self.piece_encoding[piece], 16) << shift_amount
+
+    def get_piece_value(self, pos):
+        x = pos[0]
+        y = pos[1]
+
+        piece = self.board[x,y]
+        if piece == '':
+            return 0
+        else:
+            return self.piece_values[piece[0]]
+
     def evaluate_v2(self):
         king_middle_game_table = [
             [20, 30, 10, 0, 0, 10, 30, 20],
@@ -216,17 +355,6 @@ class Board:
             [20, 20, 0, 0, 0, 0, 20, 20],
             [20, 30, 10, 0, 0, 10, 30, 20]
         ]
-
-        """ king_end_game = [
-            [-50, -30, -30, -30, -30, -30, -30, -50],
-            [-30, -30, 0, 0, 0, 0, -30, -30],
-            [-30, -10, 20, 30, 30, 20, -10, -30],
-            [-30, -10, 30, 40, 40, 30, -10, -30],
-            [-30, -10, 30, 40, 40, 30, -10, -30],
-            [-30, -10, 20, 30, 30, 20, -10, -30],
-            [-30, -20, -10, 0, 0, -10, -20, -30],
-            [-50, -40, -30, -20, -20, -30, -40, -50]
-        ] """
 
         queen_table = [
             [-20, -10, -10, -5, -5, -10, -10, -20],
@@ -339,15 +467,6 @@ class Board:
             [0, 0, 0, 0, 0, 0, 0, 0]
         ]
 
-        piece_values = {
-            'k': 2000.0,
-            'q': 900.0,
-            'r': 500.0,
-            'b': 300.0,
-            'n': 300.0,
-            'p': 100.0
-        }
-
         position_tables = {
             'k': (king_middle_game_table, king_middle_game_table_reversed),
             'q': (queen_table, queen_table_reversed),
@@ -371,7 +490,104 @@ class Board:
                     table_normal, table_reversed = position_tables[type_piece]
                     table = table_normal if coef == 1.0 else table_reversed
 
-                    result += (piece_values[type_piece] + table[x][y]) * coef
+                    result += (self.piece_values[type_piece] + table[x][y]) * coef
+        return result
+
+    def evaluate_v3(self):
+        king_middle_game_table = [
+            [5, 0, 0, 0, 0, 0, 0, 5],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [-10, -20, -20, -20, -20, -20, -20, -10],
+            [-20, -30, -30, -40, -40, -30, -30, -20],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30]
+        ]
+
+        queen_table = [
+            [-20, -10, -10, -5, -5, -10, -10, -20],
+            [-10, 0, 5, 0, 0, 0, 0, -10],
+            [-10, 5, 5, 5, 5, 5, 0, -10],
+            [0, 0, 5, 5, 5, 5, 0, -5],
+            [-5, 0, 5, 5, 5, 5, 0, -5],
+            [-10, 0, 5, 5, 5, 5, 0, -10],
+            [-10, 0, 0, 0, 0, 0, 0, -10],
+            [-20, -10, -10, -5, -5, -10, -10, -20]
+        ]
+
+        rook_table = [
+            [0, 0, 5, 5, 5, 5, 0, 0],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [5, 10, 10, 10, 10, 10, 10, 5],
+            [0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+
+        bishop_table = [
+            [-20, -10, -10, -10, -10, -10, -10, -20],
+            [-10, 5, 0, 0, 0, 0, 5, -10],
+            [-10, 10, 10, 10, 10, 10, 10, -10],
+            [-10, 0, 10, 10, 10, 10, 0, -10],
+            [-10, 5, 5, 10, 10, 5, 5, -10],
+            [-10, 0, 5, 10, 10, 5, 0, -10],
+            [-10, 0, 0, 0, 0, 0, 0, -10],
+            [-20, -10, -10, -10, -10, -10, -10, -20]
+        ]
+
+        knight_table = [
+            [-50, -40, -30, -30, -30, -30, -40, -50],
+            [-40, -20, 0, 5, 5, 0, -20, -40],
+            [-30, 5, 10, 15, 15, 10, 5, -30],
+            [-30, 0, 15, 20, 20, 15, 0, -30],
+            [-30, 5, 15, 20, 20, 15, 5, -30],
+            [-30, 0, 10, 15, 15, 10, 0, -30],
+            [-40, -20, 0, 0, 0, 0, -20, -40],
+            [-50, -40, -30, -30, -30, -30, -40, -50]
+        ]
+
+        pawn_table = [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [5, 10, 10, -20, -20, 10, 10, 5],
+            [10, 5, 0, 20, 20, 0, 5, 10],
+            [0, 0, 0, 20, 20, 0, 0, 0],
+            [5, 5, 10, 25, 25, 10, 5, 5],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+
+        position_tables = {
+            'k': king_middle_game_table,
+            'q': queen_table,
+            'r': rook_table,
+            'b': bishop_table,
+            'n': knight_table,
+            'p': pawn_table
+        }
+
+        result = 0.0
+
+        for x in range(self.board.shape[0]):
+            for y in range(self.board.shape[1]):
+                if self.board[x, y] != '':
+                    piece = self.board[x, y]
+                    color_piece = piece[-1]
+                    type_piece = piece[0]
+
+                    is_positive = color_piece == self.board_color_top
+                    table = position_tables[type_piece]
+
+                    mobility = len(self.movement_piece(x, y))
+                    mobility_bonus = mobility * 5
+
+                    if is_positive:
+                        result += self.piece_values[type_piece] + table[x][y] + mobility_bonus
+                    else:
+                        result -= self.piece_values[type_piece] + table[7-x][y] + mobility_bonus
         return result
 
     def evaluate_v4(self):
@@ -749,6 +965,12 @@ class Board:
         # Inclure la couleur du joueur à jouer
         return board_state, self.color_to_play
 
+    def get_board_state_v2(self):
+        """
+        Retourne une représentation immuable de l'état du plateau et du joueur à jouer.
+        """
+        # Convertir le plateau en une structure immuable (tuple de tuples)
+        return self.board_key, self.color_to_play
 
 def orderMoves(moves: list[Move], board: Board, is_maximizing: bool):
     def evaluate_move(move: Move):
@@ -767,3 +989,15 @@ def orderMoves_v3(moves: list[Move], board: Board, is_maximizing: bool):
         return evaluation
 
     return sorted(moves, key=evaluate_move, reverse=is_maximizing)
+def order_moves2(moves: list[Move], board: Board, is_maximizing, hashmove=None):
+    def move_heuristic(move: Move):
+        if move == hashmove:
+            return float('inf')  # Priorité maximale pour le hashmove
+
+        # Priorité aux captures (valeur cible - valeur source)
+        capture_value = board.get_piece_value(move.end_pos) - board.get_piece_value(move.start_pos)
+
+        return capture_value
+
+    # Trier les mouvements en fonction de leur heuristique
+    return sorted(moves, key=move_heuristic, reverse=is_maximizing)
