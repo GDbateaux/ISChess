@@ -374,9 +374,9 @@ class Board:
                     result += (piece_values[type_piece] + table[x][y]) * coef
         return result
 
-    def evaluate_v3(self):
-        #https://www.youtube.com/watch?v=RSIW7k_5eDc
-        #How to Evaluate Chess Positions? Ft. Magnus Carlsen
+    def evaluate_v4(self):
+        # https://www.youtube.com/watch?v=RSIW7k_5eDc
+        # How to Evaluate Chess Positions? Ft. Magnus Carlsen
         def piece_value(piece):
             piece_values = {
                 'k': 0.0,  # Le roi n'a pas de valeur pour l'évaluation
@@ -471,6 +471,275 @@ class Board:
 
         return total_score  # Retourne le score final pour la position donnée
 
+
+    def evaluate_v5(self):
+        def piece_value(piece):
+            piece_values = {
+                'k': 0.0,  # Le roi n'a pas de valeur pour l'évaluation
+                'q': 9.0,  # La dame est la pièce la plus puissante
+                'r': 5.0,
+                'b': 3.0,
+                'n': 3.0,
+                'p': 1.0
+            }
+            return piece_values.get(piece[0], 0)
+
+        # Variables pour accumuler les scores de chaque facteur d'évaluation
+        material_score = 0
+        activity_score = 0
+        king_safety_score = 0
+        pawn_score = 0
+        king_positions = {'w': None, 'b': None}
+
+        # Parcours de l'échiquier pour évaluer chaque pièce et chaque facteur
+        for x in range(self.board.shape[0]):
+            for y in range(self.board.shape[1]):
+                piece = self.board[x, y]
+                if piece != '':
+                    color = piece[-1]
+                    piece_type = piece[0]
+
+                    # Calcul du score matériel
+                    value = piece_value(piece)
+                    material_score += value if color == self.color_to_play else -value
+
+                    # Calcul de l'activité des pièces
+                    piece_moves = self.movement_piece(x, y)
+                    activity_score += len(piece_moves) * 0.1 if color == self.color_to_play else -len(piece_moves) * 0.1
+
+                    # Enregistrement de la position du roi
+                    if piece_type == 'k':
+                        king_positions[color] = (x, y)
+
+                    # Calcul de la structure des pions (pions passés)
+                    if piece_type == 'p':
+                        is_passed = all(
+                            self.board[j, y + i] == '' or self.board[j, y + i][-1] == color
+                            for i in range(-1, 2)
+                            for j in range(x + 1, self.board.shape[0])
+                            if 0 <= y + i < self.board.shape[1]
+                        )
+                        if is_passed:
+                            pawn_score += 2 if color == self.color_to_play else -2
+
+        # Calcul de la sécurité du roi
+        def is_king_safe(king_pos, opponent_color):
+            return all(
+                move.end_pos != king_pos
+                for x in range(self.board.shape[0])
+                for y in range(self.board.shape[1])
+                if self.board[x, y] != '' and self.board[x, y][-1] == opponent_color
+                for move in self.movement_piece(x, y)
+            )
+
+        my_king_safe = is_king_safe(king_positions[self.color_to_play], 'b' if self.color_to_play == 'w' else 'w')
+        opp_king_safe = is_king_safe(king_positions['b' if self.color_to_play == 'w' else 'w'], self.color_to_play)
+        king_safety_score = (1 if my_king_safe else -1) - (1 if opp_king_safe else -1)
+
+        # Pondération des différents critères pour obtenir le score final
+        poids_material = 0.4
+        poids_activity = 0.3
+        poids_king_safety = 0.2
+        poids_pawn_structure = 0.1
+
+        # Calcul du score final
+        total_score = (
+            poids_material * material_score +
+            poids_activity * activity_score +
+            poids_king_safety * king_safety_score +
+            poids_pawn_structure * pawn_score
+        )
+
+        return total_score
+
+    def evaluate_v3(self):
+        king_middle_game_table = [
+            [20, 30, 10, 0, 0, 10, 30, 20],
+            [20, 20, 0, 0, 0, 0, 20, 20],
+            [-10, -20, -20, -20, -20, -20, -20, -10],
+            [-20, -30, -30, -40, -40, -30, -30, -20],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30]
+        ]
+
+        king_middle_game_table_reversed = [
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-30, -40, -40, -50, -50, -40, -40, -30],
+            [-20, -30, -30, -40, -40, -30, -30, -20],
+            [-10, -20, -20, -20, -20, -20, -20, -10],
+            [20, 20, 0, 0, 0, 0, 20, 20],
+            [20, 30, 10, 0, 0, 10, 30, 20]
+        ]
+
+        """ king_end_game = [
+            [-50, -30, -30, -30, -30, -30, -30, -50],
+            [-30, -30, 0, 0, 0, 0, -30, -30],
+            [-30, -10, 20, 30, 30, 20, -10, -30],
+            [-30, -10, 30, 40, 40, 30, -10, -30],
+            [-30, -10, 30, 40, 40, 30, -10, -30],
+            [-30, -10, 20, 30, 30, 20, -10, -30],
+            [-30, -20, -10, 0, 0, -10, -20, -30],
+            [-50, -40, -30, -20, -20, -30, -40, -50]
+        ] """
+
+        queen_table = [
+            [-20, -10, -10, -5, -5, -10, -10, -20],
+            [-10, 0, 5, 0, 0, 0, 0, -10],
+            [-10, 5, 5, 5, 5, 5, 0, -10],
+            [0, 0, 5, 5, 5, 5, 0, -5],
+            [-5, 0, 5, 5, 5, 5, 0, -5],
+            [-10, 0, 5, 5, 5, 5, 0, -10],
+            [-10, 0, 0, 0, 0, 0, 0, -10],
+            [-20, -10, -10, -5, -5, -10, -10, -20]
+        ]
+
+        queen_table_reversed = [
+            [-20, -10, -10, -5, -5, -10, -10, -20],
+            [-10, 0, 0, 0, 0, 0, 0, -10],
+            [-10, 0, 5, 5, 5, 5, 0, -10],
+            [-5, 0, 5, 5, 5, 5, 0, -5],
+            [0, 0, 5, 5, 5, 5, 0, -5],
+            [-10, 5, 5, 5, 5, 5, 0, -10],
+            [-10, 0, 5, 0, 0, 0, 0, -10],
+            [-20, -10, -10, -5, -5, -10, -10, -20]
+
+        ]
+
+        rook_table = [
+            [0, 0, 0, 5, 5, 0, 0, 0],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [5, 10, 10, 10, 10, 10, 10, 5],
+            [0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+
+        rook_table_reversed = [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [5, 10, 10, 10, 10, 10, 10, 5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [-5, 0, 0, 0, 0, 0, 0, -5],
+            [0, 0, 0, 5, 5, 0, 0, 0]
+        ]
+
+        bishop_table = [
+            [-20, -10, -10, -10, -10, -10, -10, -20],
+            [-10, 5, 0, 0, 0, 0, 5, -10],
+            [-10, 10, 10, 10, 10, 10, 10, -10],
+            [-10, 0, 10, 10, 10, 10, 0, -10],
+            [-10, 5, 5, 10, 10, 5, 5, -10],
+            [-10, 0, 5, 10, 10, 5, 0, -10],
+            [-10, 0, 0, 0, 0, 0, 0, -10],
+            [-20, -10, -10, -10, -10, -10, -10, -20]
+        ]
+
+        bishop_table_reversed = [
+            [-20, -10, -10, -10, -10, -10, -10, -20],
+            [-10, 0, 0, 0, 0, 0, 0, -10],
+            [-10, 0, 5, 10, 10, 5, 0, -10],
+            [-10, 5, 5, 10, 10, 5, 5, -10],
+            [-10, 0, 10, 10, 10, 10, 0, -10],
+            [-10, 10, 10, 10, 10, 10, 10, -10],
+            [-10, 5, 0, 0, 0, 0, 5, -10],
+            [-20, -10, -10, -10, -10, -10, -10, -20]
+        ]
+
+        knight_table = [
+            [-50, -40, -30, -30, -30, -30, -40, -50],
+            [-40, -20, 0, 5, 5, 0, -20, -40],
+            [-30, 5, 10, 15, 15, 10, 5, -30],
+            [-30, 0, 15, 20, 20, 15, 0, -30],
+            [-30, 5, 15, 20, 20, 15, 5, -30],
+            [-30, 0, 10, 15, 15, 10, 0, -30],
+            [-40, -20, 0, 0, 0, 0, -20, -40],
+            [-50, -40, -30, -30, -30, -30, -40, -50]
+        ]
+
+        knight_table_reversed = [
+            [-50, -40, -30, -30, -30, -30, -40, -50],
+            [-40, -20, 0, 0, 0, 0, -20, -40],
+            [-30, 0, 10, 15, 15, 10, 0, -30],
+            [-30, 5, 15, 20, 20, 15, 5, -30],
+            [-30, 0, 15, 20, 20, 15, 0, -30],
+            [-30, 5, 10, 15, 15, 10, 5, -30],
+            [-40, -20, 0, 5, 5, 0, -20, -40],
+            [-50, -40, -30, -30, -30, -30, -40, -50]
+        ]
+
+        pawn_table = [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [5, 10, 10, -20, -20, 10, 10, 5],
+            [10, 5, 0, 20, 20, 0, 5, 10],
+            [0, 0, 0, 20, 20, 0, 0, 0],
+            [5, 5, 10, 25, 25, 10, 5, 5],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+
+        pawn_table_reversed = [
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [5, 5, 10, 25, 25, 10, 5, 5],
+            [0, 0, 0, 20, 20, 0, 0, 0],
+            [10, 5, 0, 20, 20, 0, 5, 10],
+            [5, 10, 10, -20, -20, 10, 10, 5],
+            [0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+
+        piece_values = {
+            'k': 2000.0,
+            'q': 900.0,
+            'r': 500.0,
+            'b': 300.0,
+            'n': 300.0,
+            'p': 100.0
+        }
+
+        position_tables = {
+            'k': (king_middle_game_table, king_middle_game_table_reversed),
+            'q': (queen_table, queen_table_reversed),
+            'r': (rook_table, rook_table_reversed),
+            'b': (bishop_table, bishop_table_reversed),
+            'n': (knight_table, knight_table_reversed),
+            'p': (pawn_table, pawn_table_reversed)
+        }
+
+        result = 0.0
+        mobility_score = 0.0
+
+        for x in range(self.board.shape[0]):
+            for y in range(self.board.shape[1]):
+                if self.board[x, y] != '':
+                    piece = self.board[x, y]
+                    color_piece = piece[-1]
+                    type_piece = piece[0]
+
+                    coef = 1.0 if color_piece == self.board_color_top else -1.0
+
+                    table_normal, table_reversed = position_tables[type_piece]
+                    table = table_normal if coef == 1.0 else table_reversed
+
+                    result += (piece_values[type_piece] + table[x][y]) * coef
+
+                    # Calculer la mobilité des pièces
+                    piece_moves = self.movement_piece(x, y)  # Cette méthode existe déjà dans Board
+                    mobility_score += len(piece_moves) * coef  # Mobilité = nombre de mouvements possibles
+
+                    # Combinaison de l'évaluation matérielle et de la mobilité
+                    result = result + mobility_score * 0.1  # Poids de la mobilité (ajustable)
+        return result
+
     def get_board_state(self):
         """
         Retourne une représentation immuable de l'état du plateau et du joueur à jouer.
@@ -485,6 +754,15 @@ def orderMoves(moves: list[Move], board: Board, is_maximizing: bool):
     def evaluate_move(move: Move):
         board.make_move(move)
         evaluation = board.evaluate_v2()
+        board.undo_move(move)
+        return evaluation
+
+    return sorted(moves, key=evaluate_move, reverse=is_maximizing)
+
+def orderMoves_v3(moves: list[Move], board: Board, is_maximizing: bool):
+    def evaluate_move(move: Move):
+        board.make_move(move)
+        evaluation = board.evaluate_v3()
         board.undo_move(move)
         return evaluation
 

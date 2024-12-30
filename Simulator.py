@@ -1,9 +1,10 @@
-from PyQt6 import QtWidgets, QtGui
+from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6 import uic
 
 from Bots.ChessBotList import *
 from ChessRules import *
 from ParallelPlayer import *
+from Bots import *
 
 import numpy as np
 import csv
@@ -14,10 +15,10 @@ set_nbr_turn_to_play = 700
 set_max_time_budget = 1.0
 
 set_players_AI = {
-            'w': CHESS_BOT_LIST['AlphaBetaBotTimeMemo'],  # Bot for 'w'
-            'b': CHESS_BOT_LIST['AlphaBetaRandom']  # Bot for 'b'
+            'w': CHESS_BOT_LIST['AlphaBetaBotTime'],  # Bot for 'w'
+            'b': CHESS_BOT_LIST['AlphaBetaBotTime_v3']  # Bot for 'b'
         }
-set_csv_file = "game_results5.csv"
+set_csv_file = "game_results_V3_VS_V2.csv"
 
 # Wrap up for QApplication
 class ChessApp(QtWidgets.QApplication):
@@ -353,7 +354,7 @@ class ChessArena(QtWidgets.QWidget):
 if __name__ == "__main__":
 
     #Nombre de parties à jouer
-    total_games = 3
+    total_games = 100
     app = ChessApp()  # Create only one QApplication instance
 
     for game_number in range(total_games):
