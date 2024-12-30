@@ -374,6 +374,103 @@ class Board:
                     result += (piece_values[type_piece] + table[x][y]) * coef
         return result
 
+    def evaluate_v3(self):
+        #https://www.youtube.com/watch?v=RSIW7k_5eDc
+        #How to Evaluate Chess Positions? Ft. Magnus Carlsen
+        def piece_value(piece):
+            piece_values = {
+                'k': 0.0,  # Le roi n'a pas de valeur pour l'évaluation
+                'q': 9.0,  # La dame est la pièce la plus puissante
+                'r': 5.0,
+                'b': 3.0,
+                'n': 3.0,
+                'p': 1.0
+            }
+            return piece_values.get(piece[0], 0)
+
+        # Variables pour accumuler les scores de chaque facteur d'évaluation
+        material_score = 0  # Score matériel total
+        activity_score = 0  # Score d'activité des pièces
+        king_safety_score = 0  # Score de sécurité du roi
+        pawn_score = 0  # Score de la structure des pions
+        king_positions = {'w': None, 'b': None}  # Positions des rois pour chaque couleur
+        passed_pawns = {'w': 0, 'b': 0}  # Nombre de pions passés (n'a aucun pion adverse) pour chaque couleur
+
+        # 1. Parcours de l'échiquier pour évaluer chaque pièce et chaque facteur
+        for x in range(self.board.shape[0]):
+            for y in range(self.board.shape[1]):
+                piece = self.board[x, y]
+                if piece != '':
+                    color = piece[-1]
+                    piece_type = piece[0]
+
+                    # 2. Calcul du score matériel : additionne ou soustrait la valeur de la pièce en fonction de la couleur
+                    material_score += piece_value(piece) if color == self.color_to_play else -piece_value(piece)
+
+                    # 3. Calcul de l'activité des pièces : plus une pièce a de mouvements possibles, plus elle est active
+                    piece_moves = self.movement_piece(x, y)
+                    activity_score += len(piece_moves) * 0.1  # Score basé sur le nombre de déplacements possibles
+
+                    # 4. Enregistrement de la position du roi pour chaque couleur
+                    if piece_type == 'k':
+                        king_positions[color] = (x, y)
+
+                    # 5. Calcul de la structure des pions (pions passés)
+                    if piece_type == 'p':
+                        # Vérification si le pion est passé
+                        is_passed = True
+                        for i in range(-1,
+                                       2):  # Vérifie les cases adjacentes pour s'assurer qu'aucun pion adverse ne bloque
+                            for j in range(x + 1, self.board.shape[0]):  # Vérifie les cases devant le pion
+                                if 0 <= y + i < self.board.shape[1]:
+                                    neighbor_piece = self.board[j, y + i]
+                                    if neighbor_piece != '' and neighbor_piece[0] == 'p' and neighbor_piece[
+                                        -1] != color:
+                                        is_passed = False
+                                        break
+                        if is_passed:
+                            passed_pawns[color] += 1  # Incrémente le nombre de pions passés
+                            pawn_score += 2 if color == self.color_to_play else -2  # Ajouter au score de structure de pions
+
+        # 6. Calcul de la sécurité du roi : Vérifie si le roi est en échec ou en danger
+        def is_king_safe(king_pos):
+            safe = True
+            for x in range(self.board.shape[0]):
+                for y in range(self.board.shape[1]):
+                    piece = self.board[x, y]
+                    if piece != '' and piece[-1] != self.color_to_play:
+                        moves = self.movement_piece(x, y)
+                        for move in moves:
+                            if move.end_pos == king_pos:  # Si une pièce adverse peut attaquer le roi
+                                safe = False
+                                break
+                    if not safe:
+                        break
+            return safe
+
+        # Vérification de la sécurité des rois des deux couleurs
+        my_king_safe = is_king_safe(king_positions[self.color_to_play])
+        opp_king_safe = is_king_safe(king_positions['b' if self.color_to_play == 'w' else 'w'])
+
+        # 7. Calcul du score de sécurité du roi : +1 si votre roi est en sécurité, -1 s'il est en danger
+        king_safety_score = (1 if my_king_safe else -1) - (1 if opp_king_safe else -1)
+
+        # 8. Pondération des différents critères pour obtenir le score final
+        poids_material = 0.4  # Poids attribué au score matériel
+        poids_activity = 0.3  # Poids attribué à l'activité des pièces
+        poids_king_safety = 0.2  # Poids attribué à la sécurité du roi
+        poids_pawn_structure = 0.1  # Poids attribué à la structure des pions
+
+        # 9. Calcul du score final en combinant tous les facteurs avec leurs poids respectifs
+        total_score = (
+                poids_material * material_score +
+                poids_activity * activity_score +
+                poids_king_safety * king_safety_score +
+                poids_pawn_structure * pawn_score
+        )
+
+        return total_score  # Retourne le score final pour la position donnée
+
     def get_board_state(self):
         """
         Retourne une représentation immuable de l'état du plateau et du joueur à jouer.
