@@ -1,5 +1,5 @@
 from Bots.ChessBotList import register_chess_bot
-from Bots.utils import Board, Move, order_moves2
+from Bots.utils import Board, Move, orderMoves
 import time
 
 
@@ -9,11 +9,10 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     board: Board = Board(board, color)
     depth = 0
     best_move: Move = Move((0, 0), (0, 0))
-    max_extension = 4
 
     memoization = {}
 
-    def alpha_beta(board: Board, alpha, beta, depth, time_limit, num_extension):
+    def alpha_beta(board: Board, alpha, beta, depth, time_limit):
         board_key = board.get_board_state_v2()
 
         if time.time() >= time_limit:
@@ -30,22 +29,14 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         is_maximizing = board.board_color_top == board.color_to_play
         best_evaluation = float('-inf') if is_maximizing else float('inf')
         best_move = None
+        moves = orderMoves(board.get_movements(), board, is_maximizing)
 
         if board_key in memoization and memoization[board_key][2] >= depth:
             best_evaluation, best_move, _ = memoization[board_key]
         else:
-            hashmove = None
-            if board_key in memoization:
-                _, hashmove, _ = memoization[board_key]
-            moves = order_moves2(board.get_movements(), board, is_maximizing, hashmove)
-
             for move in moves:
                 board.make_move(move)
-                extension = 0
-                if num_extension < max_extension and depth == 1 and (board.is_in_check(board.opposite_color(board.color_to_play))):
-                    extension = 1
-
-                evaluation, _ = alpha_beta(board, alpha, beta, depth - 1 + extension, time_limit, num_extension + extension)
+                evaluation, _ = alpha_beta(board, alpha, beta, depth - 1, time_limit)
                 board.undo_move(move)
 
                 if is_maximizing:
@@ -67,12 +58,11 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     while (time_limit > time.time()):
         depth += 1
         try:
-            best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit, 0)[1]
+            best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]
         except TimeoutError:
             depth -= 1
             break
-    print('moi')
     print("depth max :" + str(depth))
     return best_move.get_return_move()
 
-register_chess_bot('AlphaBetaBotTimeMemo++3', chess_bot)
+register_chess_bot('AlphaBetaBotSortMoveMemov2', chess_bot)

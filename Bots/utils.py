@@ -4,6 +4,9 @@ class Move:
         self.end_pos = end_pos
         self.is_promotion = is_promotion
         self.captured_piece = captured_piece
+    
+    def __eq__(self, other) : 
+        return self.__dict__ == other.__dict__
 
     def __repr__(self):
         return f"Move(start={self.start_pos}, end={self.end_pos}, promotion={self.is_promotion}, captured_piece={self.captured_piece})"
@@ -551,7 +554,7 @@ class Board:
 
         pawn_table = [
             [0, 0, 0, 0, 0, 0, 0, 0],
-            [5, 10, 10, -20, -20, 10, 10, 5],
+            [10, 10, 10, -20, -20, 10, 10, 10],
             [10, 5, 0, 20, 20, 0, 5, 10],
             [0, 0, 0, 20, 20, 0, 0, 0],
             [5, 5, 10, 25, 25, 10, 5, 5],
@@ -568,7 +571,6 @@ class Board:
             'n': knight_table,
             'p': pawn_table
         }
-
         result = 0.0
 
         for x in range(self.board.shape[0]):
@@ -581,18 +583,24 @@ class Board:
                     is_positive = color_piece == self.board_color_top
                     table = position_tables[type_piece]
 
-                    mobility = len(self.movement_piece(x, y))
-                    mobility_bonus = mobility * 5
+                    """mobility = len(self.movement_piece(x, y))
+                    mobility_weights = {'k': 0, 'q': 1.5, 'r': 1.2, 'b': 1.1, 'n': 1.2, 'p': 0.5}
+                    mobility_bonus = mobility * mobility_weights.get(type_piece, 1) """
+
+                    if type_piece == 'r':
+                        column_open = all(self.board[row, y] == '' or self.board[row, y][0] not in 'pP' for row in range(8))
+                        if column_open:
+                            result += 20 if is_positive else -20
 
                     if is_positive:
-                        result += self.piece_values[type_piece] + table[x][y] + mobility_bonus
+                        result += self.piece_values[type_piece] + table[x][y] #+ mobility_bonus
                     else:
-                        result -= self.piece_values[type_piece] + table[7-x][y] + mobility_bonus
+                        result -= self.piece_values[type_piece] + table[7-x][y] #+ mobility_bonus
         return result
 
     def evaluate_v4(self):
-        # https://www.youtube.com/watch?v=RSIW7k_5eDc
-        # How to Evaluate Chess Positions? Ft. Magnus Carlsen
+        #https://www.youtube.com/watch?v=RSIW7k_5eDc
+        #How to Evaluate Chess Positions? Ft. Magnus Carlsen
         def piece_value(piece):
             piece_values = {
                 'k': 0.0,  # Le roi n'a pas de valeur pour l'évaluation
@@ -603,7 +611,6 @@ class Board:
                 'p': 1.0
             }
             return piece_values.get(piece[0], 0)
-
         # Variables pour accumuler les scores de chaque facteur d'évaluation
         material_score = 0  # Score matériel total
         activity_score = 0  # Score d'activité des pièces
@@ -611,7 +618,6 @@ class Board:
         pawn_score = 0  # Score de la structure des pions
         king_positions = {'w': None, 'b': None}  # Positions des rois pour chaque couleur
         passed_pawns = {'w': 0, 'b': 0}  # Nombre de pions passés (n'a aucun pion adverse) pour chaque couleur
-
         # 1. Parcours de l'échiquier pour évaluer chaque pièce et chaque facteur
         for x in range(self.board.shape[0]):
             for y in range(self.board.shape[1]):
@@ -619,18 +625,14 @@ class Board:
                 if piece != '':
                     color = piece[-1]
                     piece_type = piece[0]
-
                     # 2. Calcul du score matériel : additionne ou soustrait la valeur de la pièce en fonction de la couleur
                     material_score += piece_value(piece) if color == self.color_to_play else -piece_value(piece)
-
                     # 3. Calcul de l'activité des pièces : plus une pièce a de mouvements possibles, plus elle est active
                     piece_moves = self.movement_piece(x, y)
                     activity_score += len(piece_moves) * 0.1  # Score basé sur le nombre de déplacements possibles
-
                     # 4. Enregistrement de la position du roi pour chaque couleur
                     if piece_type == 'k':
                         king_positions[color] = (x, y)
-
                     # 5. Calcul de la structure des pions (pions passés)
                     if piece_type == 'p':
                         # Vérification si le pion est passé
@@ -647,7 +649,6 @@ class Board:
                         if is_passed:
                             passed_pawns[color] += 1  # Incrémente le nombre de pions passés
                             pawn_score += 2 if color == self.color_to_play else -2  # Ajouter au score de structure de pions
-
         # 6. Calcul de la sécurité du roi : Vérifie si le roi est en échec ou en danger
         def is_king_safe(king_pos):
             safe = True
@@ -663,20 +664,16 @@ class Board:
                     if not safe:
                         break
             return safe
-
         # Vérification de la sécurité des rois des deux couleurs
         my_king_safe = is_king_safe(king_positions[self.color_to_play])
         opp_king_safe = is_king_safe(king_positions['b' if self.color_to_play == 'w' else 'w'])
-
         # 7. Calcul du score de sécurité du roi : +1 si votre roi est en sécurité, -1 s'il est en danger
         king_safety_score = (1 if my_king_safe else -1) - (1 if opp_king_safe else -1)
-
         # 8. Pondération des différents critères pour obtenir le score final
         poids_material = 0.4  # Poids attribué au score matériel
         poids_activity = 0.3  # Poids attribué à l'activité des pièces
         poids_king_safety = 0.2  # Poids attribué à la sécurité du roi
         poids_pawn_structure = 0.1  # Poids attribué à la structure des pions
-
         # 9. Calcul du score final en combinant tous les facteurs avec leurs poids respectifs
         total_score = (
                 poids_material * material_score +
@@ -684,7 +681,6 @@ class Board:
                 poids_king_safety * king_safety_score +
                 poids_pawn_structure * pawn_score
         )
-
         return total_score  # Retourne le score final pour la position donnée
 
 
@@ -991,13 +987,15 @@ def orderMoves_v3(moves: list[Move], board: Board, is_maximizing: bool):
     return sorted(moves, key=evaluate_move, reverse=is_maximizing)
 def order_moves2(moves: list[Move], board: Board, is_maximizing, hashmove=None):
     def move_heuristic(move: Move):
-        if move == hashmove:
-            return float('inf')  # Priorité maximale pour le hashmove
+        if hashmove and move == hashmove:
+            return float('inf')   # Priorité maximale pour le hashmove
 
         # Priorité aux captures (valeur cible - valeur source)
-        capture_value = board.get_piece_value(move.end_pos) - board.get_piece_value(move.start_pos)
-
-        return capture_value
+        priority = board.get_piece_value(move.end_pos) - board.get_piece_value(move.start_pos)
+        
+        if move.is_promotion:
+            priority += 900
+        return priority
 
     # Trier les mouvements en fonction de leur heuristique
-    return sorted(moves, key=move_heuristic, reverse=is_maximizing)
+    return sorted(moves, key=move_heuristic, reverse=True)

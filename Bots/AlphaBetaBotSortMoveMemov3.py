@@ -1,6 +1,7 @@
 from Bots.ChessBotList import register_chess_bot
 from Bots.utils import Board, Move, order_moves2
 import time
+import csv
 
 
 def chess_bot(player_sequence, board, time_budget, **kwargs):
@@ -8,6 +9,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     color = player_sequence[1]
     board: Board = Board(board, color)
     depth = 0
+    leaf = 0
     best_move: Move = Move((0, 0), (0, 0))
 
     memoization = {}
@@ -19,6 +21,8 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             raise TimeoutError("Time limit exceeded")
 
         if depth == 0 or board.is_game_over:
+            nonlocal leaf
+            leaf += 1
             if board_key in memoization:
                 return memoization[board_key][0], None
             else:
@@ -36,7 +40,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             hashmove = None
             if board_key in memoization:
                 _, hashmove, _ = memoization[board_key]
-            moves = order_moves2(board.get_movements(), board, is_maximizing, hashmove)
+            moves = order_moves2(board.get_movements(), board, hashmove)
 
             for move in moves:
                 board.make_move(move)
@@ -60,13 +64,20 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         return best_evaluation, best_move
 
     while (time_limit > time.time()):
+        leaf = 0
         depth += 1
         try:
             best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]
+            print(f'{depth}: {leaf}')
+            with open('test2.csv', mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([str(depth), str(leaf)])
         except TimeoutError:
             depth -= 1
             break
+    
     print("depth max :" + str(depth))
+    print(leaf)
     return best_move.get_return_move()
 
-register_chess_bot('AlphaBetaBotTimeMemo++2', chess_bot)
+register_chess_bot('AlphaBetaBotSortMoveMemov3', chess_bot)
