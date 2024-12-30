@@ -7,6 +7,7 @@ import csv
 import os
 import sys
 
+
 current_file = Path(__file__).resolve()
 parent_directory = current_file.parent.parent
 
@@ -16,7 +17,6 @@ from Bots.ChessBotList import *
 from ChessRules import *
 from ParallelPlayer import *
 from Bots import *
-from converter import convert_from_fen
 
 
 class ChessApp(QtWidgets.QApplication):
@@ -24,11 +24,11 @@ class ChessApp(QtWidgets.QApplication):
     def __init__(self):
         super().__init__([])
 
-    def start(self, data, set_players_AI):
+    def start(self, data, set_players_AI, set_nbr_turn_to_play, set_max_time_budget):
         arena = ChessArena()
         arena.show()
         arena.start(data)  # Configure le plateau
-        arena.launch_game(set_players_AI)  # Lance la partie immédiatement
+        arena.launch_game(set_players_AI, set_nbr_turn_to_play, set_max_time_budget)  # Lance la partie immédiatement
         self.exec()
 
 # Main window to handle the chess board
@@ -48,7 +48,6 @@ CHESS_PIECES_NAMES = {
     "r": "Rook",
     "p": "Pawn",
 }
-
 
 
 class ChessArena(QtWidgets.QWidget):
@@ -83,7 +82,7 @@ class ChessArena(QtWidgets.QWidget):
         )
 
     # Start the bot simulation
-    def launch_game(self, set_players_AI):
+    def launch_game(self, set_players_AI, set_nbr_turn_to_play, set_max_time_budget):
         self.add_system_message("# Starting new Game #")
         self.start_time = QtCore.QTime.currentTime()  # Start time when game begins
         # Assign bots directly
@@ -365,107 +364,5 @@ class ChessArena(QtWidgets.QWidget):
 
     def start(self, data):
         self.board = self.load_board2(data)
-        print(self.board)
         self.setup_board()
         self.chess_scene.update()
-
-# Main execution
-if __name__ == "__main__":
-    set_nbr_turn_to_play = 100
-    set_max_time_budget = 1
-
-    bots = ['AlphaBetaBotTimeMemo++2', 'AlphaBetaBotTimeMemo++eval3']
-    set_csv_file = "game_results.csv"
-
-    # Nombre de parties à jouer
-    total_games = 10
-    app = ChessApp()  # Create only one QApplication instance
-    game_number = 0
-
-    with open(current_file.parent / 'position.txt') as file:
-        for i, l in enumerate(file.readlines()):
-            if i >= total_games:
-                break
-            for j in range(2):
-                if j % 2 == 0:
-                    set_player = {
-                        'w': CHESS_BOT_LIST[bots[0]],  # Bot for 'w'
-                        'b': CHESS_BOT_LIST[bots[1]]  # Bot for 'b'
-                    }
-                else:
-                    set_player = {
-                        'b': CHESS_BOT_LIST[bots[0]],  # Bot for 'w'
-                        'w': CHESS_BOT_LIST[bots[1]]  # Bot for 'b'
-                    }
-                data = convert_from_fen(l)
-
-                print(f"Starting game {game_number + 1} of {total_games}")
-                app.start(data, set_player)  # Start each game sequentially
-                game_number += 1
-
-    print("Finished all games.")
-
-
-    def analyze_game_results(csv_file=set_csv_file):
-        # Dictionnaires pour suivre les statistiques
-        bots = {}
-        total_games = 0
-        total_real_turns = 0
-
-        try:
-            with open(csv_file, mode='r', newline='') as file:
-                reader = csv.DictReader(file)
-
-                for row in reader:
-                    total_games += 1
-                    white_bot = row['White']
-                    black_bot = row['Black']
-                    winner = row['Winner']
-                    real_turns = int(row['Real Turns'])  # Correct column name if necessary
-
-                    # Initialisation des dictionnaires pour les bots s'ils ne sont pas encore présents
-                    if white_bot not in bots:
-                        bots[white_bot] = {'white_wins': 0, 'black_wins': 0, 'draws': 0, 'games': 0}
-                    if black_bot not in bots:
-                        bots[black_bot] = {'white_wins': 0, 'black_wins': 0, 'draws': 0, 'games': 0}
-
-                    # Mise à jour des statistiques pour chaque jeu
-                    if winner == "White":
-                        bots[white_bot]['white_wins'] += 1
-                    elif winner == "Black":
-                        bots[black_bot]['black_wins'] += 1
-                    else:
-                        bots[white_bot]['draws'] += 1
-                        bots[black_bot]['draws'] += 1
-
-                    # Mise à jour du nombre total de jeux et des tours réels
-                    bots[white_bot]['games'] += 1
-                    bots[black_bot]['games'] += 1
-                    total_real_turns += real_turns
-
-        except Exception as e:
-            print(f"Error reading CSV file: {e}")
-            return
-        print(bots)
-        # Affichage des résultats
-        print("Bot Match Analysis Results:")
-        print("------------------------------")
-        print(f"Total games played: {total_games}")
-        print(f"Average Real Turns: {total_real_turns / total_games:.2f}")
-        print()
-
-        for bot_name, stats in bots.items():
-            total_bot_games = stats['games']
-            white_wins_percentage = (stats['white_wins'] / total_bot_games) * 100
-            black_wins_percentage = (stats['black_wins'] / total_bot_games) * 100
-            draws_percentage = (stats['draws'] / total_bot_games) * 100
-
-            print(f"Bot: {bot_name}")
-            print(f"  - White wins: {stats['white_wins']} ({white_wins_percentage:.2f}%)")
-            print(f"  - Black wins: {stats['black_wins']} ({black_wins_percentage:.2f}%)")
-            print(f"  - Draws: {stats['draws']} ({draws_percentage:.2f}%)")
-            print()
-
-
-    # Appel de la méthode
-    analyze_game_results(set_csv_file)
