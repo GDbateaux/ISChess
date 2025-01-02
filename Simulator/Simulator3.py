@@ -376,7 +376,7 @@ if __name__ == "__main__":
     set_max_time_budget = 1.0
 
     set_player = {
-                'w': CHESS_BOT_LIST['AlphaBetaBotTime'],  # Bot for 'w'
+                'w': CHESS_BOT_LIST['AlphaBetaBotTimeSortMov_v3'],  # Bot for 'w'
                 'b': CHESS_BOT_LIST['AlphaBetaBotTimeSortMov']  # Bot for 'b'
             }
     set_csv_file = "game_results.csv"

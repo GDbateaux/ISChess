@@ -25,7 +25,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     time_limit = time.time() + time_budget * 0.95
     color = player_sequence[1]
     board: Board = Board(board, color)
-    depth = 0
+    depth = 2
     best_move: Move = Move((0, 0), (0, 0))
 
     memoization = {}
