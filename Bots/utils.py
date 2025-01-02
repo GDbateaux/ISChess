@@ -497,9 +497,13 @@ class Board:
         return result
 
     def evaluate_v3(self):
-        king_middle_game_table = [
-            [5, 0, 0, 0, 0, 0, 0, 5],
-            [0, 0, 0, 0, 0, 0, 0, 0],
+        def king_distance_to_edge(x, y):
+            """Calcule la distance du roi aux bords de l'échiquier."""
+            return min(x, 7 - x, y, 7 - y)
+    
+        mg_king_table = [
+            [20, 30, 10, 0, 0, 10, 30, 20],
+            [20, 20, 0, 0, 0, 0, 20, 20],
             [-10, -20, -20, -20, -20, -20, -20, -10],
             [-20, -30, -30, -40, -40, -30, -30, -20],
             [-30, -40, -40, -50, -50, -40, -40, -30],
@@ -507,6 +511,17 @@ class Board:
             [-30, -40, -40, -50, -50, -40, -40, -30],
             [-30, -40, -40, -50, -50, -40, -40, -30]
         ]
+
+        eg_king_table = [
+			[-50, -30, -30, -30, -30, -30, -30, -50],
+			[-30, -25, 0, 0, 0, 0, -25, -30],
+			[-25, -20, 20, 25, 25, 20, -20, -25],
+			[-20, -15, 30, 40, 40, 30, -15, -20],
+			[-15, -10, 35, 45, 45, 35, -10, -15],
+			[-10, -5, 20, 30, 30, 20, -5, -10],
+			[-5, 0, 5, 5, 5, 5, 0, -5],
+			[-20, -10, -10, -10, -10, -10, -10, -20]
+		]
 
         queen_table = [
             [-20, -10, -10, -5, -5, -10, -10, -20],
@@ -552,9 +567,9 @@ class Board:
             [-50, -40, -30, -30, -30, -30, -40, -50]
         ]
 
-        pawn_table = [
+        mg_pawn_table = [
             [0, 0, 0, 0, 0, 0, 0, 0],
-            [10, 10, 10, -20, -20, 10, 10, 10],
+            [5, 10, 10, -20, -20, 10, 10, 5],
             [10, 5, 0, 20, 20, 0, 5, 10],
             [0, 0, 0, 20, 20, 0, 0, 0],
             [5, 5, 10, 25, 25, 10, 5, 5],
@@ -563,15 +578,36 @@ class Board:
             [0, 0, 0, 0, 0, 0, 0, 0]
         ]
 
+        eg_pawn_table = [
+			[0, 0, 0, 0, 0, 0, 0, 0],
+			[10, 10, 10, 10, 10, 10, 10, 10],
+			[10, 10, 10, 10, 10, 10, 10, 10],
+			[20, 20, 20, 20, 20, 20, 20, 20],
+			[30, 30, 30, 30, 30, 30, 30, 30],
+			[50, 50, 50, 50, 50, 50, 50, 50],
+			[80, 80, 80, 80, 80, 80, 80, 80],
+			[0, 0, 0, 0, 0, 0, 0, 0]
+        ]
+
         position_tables = {
-            'k': king_middle_game_table,
+            'k': mg_king_table,
             'q': queen_table,
             'r': rook_table,
             'b': bishop_table,
             'n': knight_table,
-            'p': pawn_table
+            'p': mg_pawn_table
         }
-        result = 0.0
+        eg_position_tables = {
+            'k': eg_king_table,
+            'q': queen_table,
+            'r': rook_table,
+            'b': bishop_table,
+            'n': knight_table,
+            'p': eg_pawn_table
+        }
+        mg_result = 0.0
+        eg_result = 0.0
+        material_count = 0
 
         for x in range(self.board.shape[0]):
             for y in range(self.board.shape[1]):
@@ -582,375 +618,35 @@ class Board:
 
                     is_positive = color_piece == self.board_color_top
                     table = position_tables[type_piece]
+                    eg_table = eg_position_tables[type_piece]
+
+                    if type_piece not in 'k':
+                        material_count += self.piece_values[type_piece]
 
                     """mobility = len(self.movement_piece(x, y))
                     mobility_weights = {'k': 0, 'q': 1.5, 'r': 1.2, 'b': 1.1, 'n': 1.2, 'p': 0.5}
                     mobility_bonus = mobility * mobility_weights.get(type_piece, 1) """
 
-                    if type_piece == 'r':
+                    """ if type_piece == 'r':
                         column_open = all(self.board[row, y] == '' or self.board[row, y][0] not in 'pP' for row in range(8))
                         if column_open:
-                            result += 20 if is_positive else -20
+                            result += 20 if is_positive else -20 """
+                    
+                    if type_piece == 'k':
+                        if color_piece != self.board_color_top:  # Roi adverse
+                            distance_to_edge = king_distance_to_edge(x, y)
+                            # Bonus si le roi est proche des bords en fin de partie
+                            king_endgame_bonus = (4 - distance_to_edge) * 10
+                            eg_result -= king_endgame_bonus  # Pénalisation du roi adverse
 
                     if is_positive:
-                        result += self.piece_values[type_piece] + table[x][y] #+ mobility_bonus
+                        mg_result += self.piece_values[type_piece] + table[x][y] #+ mobility_bonus
+                        eg_result += self.piece_values[type_piece] + eg_table[x][y]
                     else:
-                        result -= self.piece_values[type_piece] + table[7-x][y] #+ mobility_bonus
-        return result
-
-    def evaluate_v4(self):
-        #https://www.youtube.com/watch?v=RSIW7k_5eDc
-        #How to Evaluate Chess Positions? Ft. Magnus Carlsen
-        def piece_value(piece):
-            piece_values = {
-                'k': 0.0,  # Le roi n'a pas de valeur pour l'évaluation
-                'q': 9.0,  # La dame est la pièce la plus puissante
-                'r': 5.0,
-                'b': 3.0,
-                'n': 3.0,
-                'p': 1.0
-            }
-            return piece_values.get(piece[0], 0)
-        # Variables pour accumuler les scores de chaque facteur d'évaluation
-        material_score = 0  # Score matériel total
-        activity_score = 0  # Score d'activité des pièces
-        king_safety_score = 0  # Score de sécurité du roi
-        pawn_score = 0  # Score de la structure des pions
-        king_positions = {'w': None, 'b': None}  # Positions des rois pour chaque couleur
-        passed_pawns = {'w': 0, 'b': 0}  # Nombre de pions passés (n'a aucun pion adverse) pour chaque couleur
-        # 1. Parcours de l'échiquier pour évaluer chaque pièce et chaque facteur
-        for x in range(self.board.shape[0]):
-            for y in range(self.board.shape[1]):
-                piece = self.board[x, y]
-                if piece != '':
-                    color = piece[-1]
-                    piece_type = piece[0]
-                    # 2. Calcul du score matériel : additionne ou soustrait la valeur de la pièce en fonction de la couleur
-                    material_score += piece_value(piece) if color == self.color_to_play else -piece_value(piece)
-                    # 3. Calcul de l'activité des pièces : plus une pièce a de mouvements possibles, plus elle est active
-                    piece_moves = self.movement_piece(x, y)
-                    activity_score += len(piece_moves) * 0.1  # Score basé sur le nombre de déplacements possibles
-                    # 4. Enregistrement de la position du roi pour chaque couleur
-                    if piece_type == 'k':
-                        king_positions[color] = (x, y)
-                    # 5. Calcul de la structure des pions (pions passés)
-                    if piece_type == 'p':
-                        # Vérification si le pion est passé
-                        is_passed = True
-                        for i in range(-1,
-                                       2):  # Vérifie les cases adjacentes pour s'assurer qu'aucun pion adverse ne bloque
-                            for j in range(x + 1, self.board.shape[0]):  # Vérifie les cases devant le pion
-                                if 0 <= y + i < self.board.shape[1]:
-                                    neighbor_piece = self.board[j, y + i]
-                                    if neighbor_piece != '' and neighbor_piece[0] == 'p' and neighbor_piece[
-                                        -1] != color:
-                                        is_passed = False
-                                        break
-                        if is_passed:
-                            passed_pawns[color] += 1  # Incrémente le nombre de pions passés
-                            pawn_score += 2 if color == self.color_to_play else -2  # Ajouter au score de structure de pions
-        # 6. Calcul de la sécurité du roi : Vérifie si le roi est en échec ou en danger
-        def is_king_safe(king_pos):
-            safe = True
-            for x in range(self.board.shape[0]):
-                for y in range(self.board.shape[1]):
-                    piece = self.board[x, y]
-                    if piece != '' and piece[-1] != self.color_to_play:
-                        moves = self.movement_piece(x, y)
-                        for move in moves:
-                            if move.end_pos == king_pos:  # Si une pièce adverse peut attaquer le roi
-                                safe = False
-                                break
-                    if not safe:
-                        break
-            return safe
-        # Vérification de la sécurité des rois des deux couleurs
-        my_king_safe = is_king_safe(king_positions[self.color_to_play])
-        opp_king_safe = is_king_safe(king_positions['b' if self.color_to_play == 'w' else 'w'])
-        # 7. Calcul du score de sécurité du roi : +1 si votre roi est en sécurité, -1 s'il est en danger
-        king_safety_score = (1 if my_king_safe else -1) - (1 if opp_king_safe else -1)
-        # 8. Pondération des différents critères pour obtenir le score final
-        poids_material = 0.4  # Poids attribué au score matériel
-        poids_activity = 0.3  # Poids attribué à l'activité des pièces
-        poids_king_safety = 0.2  # Poids attribué à la sécurité du roi
-        poids_pawn_structure = 0.1  # Poids attribué à la structure des pions
-        # 9. Calcul du score final en combinant tous les facteurs avec leurs poids respectifs
-        total_score = (
-                poids_material * material_score +
-                poids_activity * activity_score +
-                poids_king_safety * king_safety_score +
-                poids_pawn_structure * pawn_score
-        )
-        return total_score  # Retourne le score final pour la position donnée
-
-
-    def evaluate_v5(self):
-        def piece_value(piece):
-            piece_values = {
-                'k': 0.0,  # Le roi n'a pas de valeur pour l'évaluation
-                'q': 9.0,  # La dame est la pièce la plus puissante
-                'r': 5.0,
-                'b': 3.0,
-                'n': 3.0,
-                'p': 1.0
-            }
-            return piece_values.get(piece[0], 0)
-
-        # Variables pour accumuler les scores de chaque facteur d'évaluation
-        material_score = 0
-        activity_score = 0
-        king_safety_score = 0
-        pawn_score = 0
-        king_positions = {'w': None, 'b': None}
-
-        # Parcours de l'échiquier pour évaluer chaque pièce et chaque facteur
-        for x in range(self.board.shape[0]):
-            for y in range(self.board.shape[1]):
-                piece = self.board[x, y]
-                if piece != '':
-                    color = piece[-1]
-                    piece_type = piece[0]
-
-                    # Calcul du score matériel
-                    value = piece_value(piece)
-                    material_score += value if color == self.color_to_play else -value
-
-                    # Calcul de l'activité des pièces
-                    piece_moves = self.movement_piece(x, y)
-                    activity_score += len(piece_moves) * 0.1 if color == self.color_to_play else -len(piece_moves) * 0.1
-
-                    # Enregistrement de la position du roi
-                    if piece_type == 'k':
-                        king_positions[color] = (x, y)
-
-                    # Calcul de la structure des pions (pions passés)
-                    if piece_type == 'p':
-                        is_passed = all(
-                            self.board[j, y + i] == '' or self.board[j, y + i][-1] == color
-                            for i in range(-1, 2)
-                            for j in range(x + 1, self.board.shape[0])
-                            if 0 <= y + i < self.board.shape[1]
-                        )
-                        if is_passed:
-                            pawn_score += 2 if color == self.color_to_play else -2
-
-        # Calcul de la sécurité du roi
-        def is_king_safe(king_pos, opponent_color):
-            return all(
-                move.end_pos != king_pos
-                for x in range(self.board.shape[0])
-                for y in range(self.board.shape[1])
-                if self.board[x, y] != '' and self.board[x, y][-1] == opponent_color
-                for move in self.movement_piece(x, y)
-            )
-
-        my_king_safe = is_king_safe(king_positions[self.color_to_play], 'b' if self.color_to_play == 'w' else 'w')
-        opp_king_safe = is_king_safe(king_positions['b' if self.color_to_play == 'w' else 'w'], self.color_to_play)
-        king_safety_score = (1 if my_king_safe else -1) - (1 if opp_king_safe else -1)
-
-        # Pondération des différents critères pour obtenir le score final
-        poids_material = 0.4
-        poids_activity = 0.3
-        poids_king_safety = 0.2
-        poids_pawn_structure = 0.1
-
-        # Calcul du score final
-        total_score = (
-            poids_material * material_score +
-            poids_activity * activity_score +
-            poids_king_safety * king_safety_score +
-            poids_pawn_structure * pawn_score
-        )
-
-        return total_score
-
-    def evaluate_v3(self):
-        king_middle_game_table = [
-            [20, 30, 10, 0, 0, 10, 30, 20],
-            [20, 20, 0, 0, 0, 0, 20, 20],
-            [-10, -20, -20, -20, -20, -20, -20, -10],
-            [-20, -30, -30, -40, -40, -30, -30, -20],
-            [-30, -40, -40, -50, -50, -40, -40, -30],
-            [-30, -40, -40, -50, -50, -40, -40, -30],
-            [-30, -40, -40, -50, -50, -40, -40, -30],
-            [-30, -40, -40, -50, -50, -40, -40, -30]
-        ]
-
-        king_middle_game_table_reversed = [
-            [-30, -40, -40, -50, -50, -40, -40, -30],
-            [-30, -40, -40, -50, -50, -40, -40, -30],
-            [-30, -40, -40, -50, -50, -40, -40, -30],
-            [-30, -40, -40, -50, -50, -40, -40, -30],
-            [-20, -30, -30, -40, -40, -30, -30, -20],
-            [-10, -20, -20, -20, -20, -20, -20, -10],
-            [20, 20, 0, 0, 0, 0, 20, 20],
-            [20, 30, 10, 0, 0, 10, 30, 20]
-        ]
-
-        """ king_end_game = [
-            [-50, -30, -30, -30, -30, -30, -30, -50],
-            [-30, -30, 0, 0, 0, 0, -30, -30],
-            [-30, -10, 20, 30, 30, 20, -10, -30],
-            [-30, -10, 30, 40, 40, 30, -10, -30],
-            [-30, -10, 30, 40, 40, 30, -10, -30],
-            [-30, -10, 20, 30, 30, 20, -10, -30],
-            [-30, -20, -10, 0, 0, -10, -20, -30],
-            [-50, -40, -30, -20, -20, -30, -40, -50]
-        ] """
-
-        queen_table = [
-            [-20, -10, -10, -5, -5, -10, -10, -20],
-            [-10, 0, 5, 0, 0, 0, 0, -10],
-            [-10, 5, 5, 5, 5, 5, 0, -10],
-            [0, 0, 5, 5, 5, 5, 0, -5],
-            [-5, 0, 5, 5, 5, 5, 0, -5],
-            [-10, 0, 5, 5, 5, 5, 0, -10],
-            [-10, 0, 0, 0, 0, 0, 0, -10],
-            [-20, -10, -10, -5, -5, -10, -10, -20]
-        ]
-
-        queen_table_reversed = [
-            [-20, -10, -10, -5, -5, -10, -10, -20],
-            [-10, 0, 0, 0, 0, 0, 0, -10],
-            [-10, 0, 5, 5, 5, 5, 0, -10],
-            [-5, 0, 5, 5, 5, 5, 0, -5],
-            [0, 0, 5, 5, 5, 5, 0, -5],
-            [-10, 5, 5, 5, 5, 5, 0, -10],
-            [-10, 0, 5, 0, 0, 0, 0, -10],
-            [-20, -10, -10, -5, -5, -10, -10, -20]
-
-        ]
-
-        rook_table = [
-            [0, 0, 0, 5, 5, 0, 0, 0],
-            [-5, 0, 0, 0, 0, 0, 0, -5],
-            [-5, 0, 0, 0, 0, 0, 0, -5],
-            [-5, 0, 0, 0, 0, 0, 0, -5],
-            [-5, 0, 0, 0, 0, 0, 0, -5],
-            [-5, 0, 0, 0, 0, 0, 0, -5],
-            [5, 10, 10, 10, 10, 10, 10, 5],
-            [0, 0, 0, 0, 0, 0, 0, 0]
-        ]
-
-        rook_table_reversed = [
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [5, 10, 10, 10, 10, 10, 10, 5],
-            [-5, 0, 0, 0, 0, 0, 0, -5],
-            [-5, 0, 0, 0, 0, 0, 0, -5],
-            [-5, 0, 0, 0, 0, 0, 0, -5],
-            [-5, 0, 0, 0, 0, 0, 0, -5],
-            [-5, 0, 0, 0, 0, 0, 0, -5],
-            [0, 0, 0, 5, 5, 0, 0, 0]
-        ]
-
-        bishop_table = [
-            [-20, -10, -10, -10, -10, -10, -10, -20],
-            [-10, 5, 0, 0, 0, 0, 5, -10],
-            [-10, 10, 10, 10, 10, 10, 10, -10],
-            [-10, 0, 10, 10, 10, 10, 0, -10],
-            [-10, 5, 5, 10, 10, 5, 5, -10],
-            [-10, 0, 5, 10, 10, 5, 0, -10],
-            [-10, 0, 0, 0, 0, 0, 0, -10],
-            [-20, -10, -10, -10, -10, -10, -10, -20]
-        ]
-
-        bishop_table_reversed = [
-            [-20, -10, -10, -10, -10, -10, -10, -20],
-            [-10, 0, 0, 0, 0, 0, 0, -10],
-            [-10, 0, 5, 10, 10, 5, 0, -10],
-            [-10, 5, 5, 10, 10, 5, 5, -10],
-            [-10, 0, 10, 10, 10, 10, 0, -10],
-            [-10, 10, 10, 10, 10, 10, 10, -10],
-            [-10, 5, 0, 0, 0, 0, 5, -10],
-            [-20, -10, -10, -10, -10, -10, -10, -20]
-        ]
-
-        knight_table = [
-            [-50, -40, -30, -30, -30, -30, -40, -50],
-            [-40, -20, 0, 5, 5, 0, -20, -40],
-            [-30, 5, 10, 15, 15, 10, 5, -30],
-            [-30, 0, 15, 20, 20, 15, 0, -30],
-            [-30, 5, 15, 20, 20, 15, 5, -30],
-            [-30, 0, 10, 15, 15, 10, 0, -30],
-            [-40, -20, 0, 0, 0, 0, -20, -40],
-            [-50, -40, -30, -30, -30, -30, -40, -50]
-        ]
-
-        knight_table_reversed = [
-            [-50, -40, -30, -30, -30, -30, -40, -50],
-            [-40, -20, 0, 0, 0, 0, -20, -40],
-            [-30, 0, 10, 15, 15, 10, 0, -30],
-            [-30, 5, 15, 20, 20, 15, 5, -30],
-            [-30, 0, 15, 20, 20, 15, 0, -30],
-            [-30, 5, 10, 15, 15, 10, 5, -30],
-            [-40, -20, 0, 5, 5, 0, -20, -40],
-            [-50, -40, -30, -30, -30, -30, -40, -50]
-        ]
-
-        pawn_table = [
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [5, 10, 10, -20, -20, 10, 10, 5],
-            [10, 5, 0, 20, 20, 0, 5, 10],
-            [0, 0, 0, 20, 20, 0, 0, 0],
-            [5, 5, 10, 25, 25, 10, 5, 5],
-            [10, 10, 20, 30, 30, 20, 10, 10],
-            [50, 50, 50, 50, 50, 50, 50, 50],
-            [0, 0, 0, 0, 0, 0, 0, 0]
-        ]
-
-        pawn_table_reversed = [
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [50, 50, 50, 50, 50, 50, 50, 50],
-            [10, 10, 20, 30, 30, 20, 10, 10],
-            [5, 5, 10, 25, 25, 10, 5, 5],
-            [0, 0, 0, 20, 20, 0, 0, 0],
-            [10, 5, 0, 20, 20, 0, 5, 10],
-            [5, 10, 10, -20, -20, 10, 10, 5],
-            [0, 0, 0, 0, 0, 0, 0, 0]
-        ]
-
-        piece_values = {
-            'k': 2000.0,
-            'q': 900.0,
-            'r': 500.0,
-            'b': 300.0,
-            'n': 300.0,
-            'p': 100.0
-        }
-
-        position_tables = {
-            'k': (king_middle_game_table, king_middle_game_table_reversed),
-            'q': (queen_table, queen_table_reversed),
-            'r': (rook_table, rook_table_reversed),
-            'b': (bishop_table, bishop_table_reversed),
-            'n': (knight_table, knight_table_reversed),
-            'p': (pawn_table, pawn_table_reversed)
-        }
-
-        result = 0.0
-        mobility_score = 0.0
-
-        for x in range(self.board.shape[0]):
-            for y in range(self.board.shape[1]):
-                if self.board[x, y] != '':
-                    piece = self.board[x, y]
-                    color_piece = piece[-1]
-                    type_piece = piece[0]
-
-                    coef = 1.0 if color_piece == self.board_color_top else -1.0
-
-                    table_normal, table_reversed = position_tables[type_piece]
-                    table = table_normal if coef == 1.0 else table_reversed
-
-                    result += (piece_values[type_piece] + table[x][y]) * coef
-
-                    # Calculer la mobilité des pièces
-                    piece_moves = self.movement_piece(x, y)  # Cette méthode existe déjà dans Board
-                    mobility_score += len(piece_moves) * coef  # Mobilité = nombre de mouvements possibles
-
-                    # Combinaison de l'évaluation matérielle et de la mobilité
-                    result = result + mobility_score * 0.1  # Poids de la mobilité (ajustable)
-        return result
+                        mg_result -= self.piece_values[type_piece] + table[7-x][y] #+ mobility_bonus
+                        eg_result -= self.piece_values[type_piece] + eg_table[7-x][y]
+        phase = min(material_count / (2 * (self.piece_values['r'] * 2 + self.piece_values['b'] + self.piece_values['n'])), 1.0)
+        return (1 - phase) * eg_result + phase * mg_result
 
     def get_board_state(self):
         """
@@ -977,15 +673,7 @@ def orderMoves(moves: list[Move], board: Board, is_maximizing: bool):
 
     return sorted(moves, key=evaluate_move, reverse=is_maximizing)
 
-def orderMoves_v3(moves: list[Move], board: Board, is_maximizing: bool):
-    def evaluate_move(move: Move):
-        board.make_move(move)
-        evaluation = board.evaluate_v3()
-        board.undo_move(move)
-        return evaluation
-
-    return sorted(moves, key=evaluate_move, reverse=is_maximizing)
-def order_moves2(moves: list[Move], board: Board, is_maximizing, hashmove=None):
+def order_moves2(moves: list[Move], board: Board, hashmove=None):
     def move_heuristic(move: Move):
         if hashmove and move == hashmove:
             return float('inf')   # Priorité maximale pour le hashmove
