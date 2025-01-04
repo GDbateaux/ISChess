@@ -514,10 +514,6 @@ class Board:
         return result
 
     def evaluate_v3(self):
-        def king_distance_to_edge(x, y):
-            """Calcule la distance du roi aux bords de l'échiquier."""
-            return min(x, 7 - x, y, 7 - y)
-
         mg_king_table = [
             [20, 20, 10, 0, 0, 10, 20, 20],
             [30, 20, 0, 0, 0, 0, 20, 30],
@@ -625,6 +621,7 @@ class Board:
         mg_result = 0.0
         eg_result = 0.0
         material_count = 0
+        endgame_material_start = self.piece_values['r'] * 2 + self.piece_values['b'] + self.piece_values['n']
 
         for x in range(self.board.shape[0]):
             for y in range(self.board.shape[1]):
@@ -647,13 +644,13 @@ class Board:
                             eg_result += 20 if is_positive else -20
 
                     if is_positive:
-                        mg_result += self.piece_values[type_piece] + table[x][y] #+ mobility_bonus
+                        mg_result += self.piece_values[type_piece] + table[x][y]
                         eg_result += self.piece_values[type_piece] + eg_table[x][y]
                     else:
-                        mg_result -= self.piece_values[type_piece] + table[7-x][y] #+ mobility_bonus
+                        mg_result -= self.piece_values[type_piece] + table[7-x][y]
                         eg_result -= self.piece_values[type_piece] + eg_table[7-x][y]
         
-        phase = min(material_count / (2 * (self.piece_values['r'] * 2 + self.piece_values['b'] + self.piece_values['n'])), 1.0)
+        phase = min(material_count / (2 * endgame_material_start), 1.0)
         return (1 - phase) * eg_result + phase * mg_result
 
     def evaluate_v4(self):
