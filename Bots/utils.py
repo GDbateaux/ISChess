@@ -514,9 +514,13 @@ class Board:
         return result
 
     def evaluate_v3(self):
+        def king_distance_to_edge(x, y):
+            """Calcule la distance du roi aux bords de l'échiquier."""
+            return min(x, 7 - x, y, 7 - y)
+
         mg_king_table = [
-            [20, 20, 10, 0, 0, 10, 20, 20],
-            [30, 20, 0, 0, 0, 0, 20, 30],
+            [20, 30, 10, 0, 0, 10, 30, 20],
+            [20, 20, 0, 0, 0, 0, 20, 20],
             [-10, -20, -20, -20, -20, -20, -20, -10],
             [-20, -30, -30, -40, -40, -30, -30, -20],
             [-30, -40, -40, -50, -50, -40, -40, -30],
@@ -583,7 +587,7 @@ class Board:
         mg_pawn_table = [
             [0, 0, 0, 0, 0, 0, 0, 0],
             [5, 10, 10, -20, -20, 10, 10, 5],
-            [15, 5, 0, 15, 15, 0, 5, 15],
+            [10, 5, 0, 20, 20, 0, 5, 10],
             [0, 0, 0, 20, 20, 0, 0, 0],
             [5, 5, 10, 25, 25, 10, 5, 5],
             [10, 10, 20, 30, 30, 20, 10, 10],
@@ -621,7 +625,6 @@ class Board:
         mg_result = 0.0
         eg_result = 0.0
         material_count = 0
-        endgame_material_start = self.piece_values['r'] * 2 + self.piece_values['b'] + self.piece_values['n']
 
         for x in range(self.board.shape[0]):
             for y in range(self.board.shape[1]):
@@ -634,14 +637,15 @@ class Board:
                     table = position_tables[type_piece]
                     eg_table = eg_position_tables[type_piece]
 
-                    if type_piece not in 'kp':
+                    if type_piece not in 'k':
                         material_count += self.piece_values[type_piece]
 
-                    if type_piece == 'r':
-                        column_open = all(self.board[row, y] == '' or self.board[row, y][0] not in 'p' for row in range(8))
-                        if column_open:
-                            mg_result += 20 if is_positive else -20
-                            eg_result += 20 if is_positive else -20
+                    if type_piece == 'k':
+                        if color_piece != self.board_color_top:  # Roi adverse
+                            distance_to_edge = king_distance_to_edge(x, y)
+                            # Bonus si le roi est proche des bords en fin de partie
+                            king_endgame_bonus = (4 - distance_to_edge) * 10
+                            eg_result -= king_endgame_bonus  # Pénalisation du roi adverse
 
                     if is_positive:
                         mg_result += self.piece_values[type_piece] + table[x][y]
@@ -649,8 +653,7 @@ class Board:
                     else:
                         mg_result -= self.piece_values[type_piece] + table[7-x][y]
                         eg_result -= self.piece_values[type_piece] + eg_table[7-x][y]
-        
-        phase = min(material_count / (2 * endgame_material_start), 1.0)
+        phase = min(material_count / (2 * (self.piece_values['r'] * 2 + self.piece_values['b'] + self.piece_values['n'])), 1.0)
         return (1 - phase) * eg_result + phase * mg_result
 
     def evaluate_v4(self):
