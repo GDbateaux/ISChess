@@ -519,8 +519,8 @@ class Board:
             return min(x, 7 - x, y, 7 - y)
 
         mg_king_table = [
-            [20, 30, 10, 0, 0, 10, 30, 20],
-            [20, 20, 0, 0, 0, 0, 20, 20],
+            [20, 20, 10, 0, 0, 10, 20, 20],
+            [30, 20, 0, 0, 0, 0, 20, 30],
             [-10, -20, -20, -20, -20, -20, -20, -10],
             [-20, -30, -30, -40, -40, -30, -30, -20],
             [-30, -40, -40, -50, -50, -40, -40, -30],
@@ -587,7 +587,7 @@ class Board:
         mg_pawn_table = [
             [0, 0, 0, 0, 0, 0, 0, 0],
             [5, 10, 10, -20, -20, 10, 10, 5],
-            [10, 5, 0, 20, 20, 0, 5, 10],
+            [15, 5, 0, 15, 15, 0, 5, 15],
             [0, 0, 0, 20, 20, 0, 0, 0],
             [5, 5, 10, 25, 25, 10, 5, 5],
             [10, 10, 20, 30, 30, 20, 10, 10],
@@ -637,24 +637,14 @@ class Board:
                     table = position_tables[type_piece]
                     eg_table = eg_position_tables[type_piece]
 
-                    if type_piece not in 'k':
+                    if type_piece not in 'kp':
                         material_count += self.piece_values[type_piece]
 
-                    """mobility = len(self.movement_piece(x, y))
-                    mobility_weights = {'k': 0, 'q': 1.5, 'r': 1.2, 'b': 1.1, 'n': 1.2, 'p': 0.5}
-                    mobility_bonus = mobility * mobility_weights.get(type_piece, 1) """
-
-                    """ if type_piece == 'r':
-                        column_open = all(self.board[row, y] == '' or self.board[row, y][0] not in 'pP' for row in range(8))
+                    if type_piece == 'r':
+                        column_open = all(self.board[row, y] == '' or self.board[row, y][0] not in 'p' for row in range(8))
                         if column_open:
-                            result += 20 if is_positive else -20 """
-
-                    if type_piece == 'k':
-                        if color_piece != self.board_color_top:  # Roi adverse
-                            distance_to_edge = king_distance_to_edge(x, y)
-                            # Bonus si le roi est proche des bords en fin de partie
-                            king_endgame_bonus = (4 - distance_to_edge) * 10
-                            eg_result -= king_endgame_bonus  # Pénalisation du roi adverse
+                            mg_result += 20 if is_positive else -20
+                            eg_result += 20 if is_positive else -20
 
                     if is_positive:
                         mg_result += self.piece_values[type_piece] + table[x][y] #+ mobility_bonus
@@ -662,6 +652,7 @@ class Board:
                     else:
                         mg_result -= self.piece_values[type_piece] + table[7-x][y] #+ mobility_bonus
                         eg_result -= self.piece_values[type_piece] + eg_table[7-x][y]
+        
         phase = min(material_count / (2 * (self.piece_values['r'] * 2 + self.piece_values['b'] + self.piece_values['n'])), 1.0)
         return (1 - phase) * eg_result + phase * mg_result
 
