@@ -336,6 +336,23 @@ class Board:
         else:
             return self.piece_values[piece[0]]
 
+    def evaluate_v1(self):
+
+        result = 0.0
+
+        for x in range(self.board.shape[0]):
+            for y in range(self.board.shape[1]):
+                if self.board[x, y] != '':
+                    piece = self.board[x, y]
+                    color_piece = piece[-1]
+                    type_piece = piece[0]
+
+                    coef = 1.0 if color_piece == self.board_color_top else -1.0
+
+                    result += (self.piece_values[type_piece]) * coef
+        return result
+
+
     def evaluate_v2(self):
         king_middle_game_table = [
             [20, 30, 10, 0, 0, 10, 30, 20],
@@ -764,7 +781,7 @@ class Board:
 
         return total_score
 
-    def evaluate_v3(self):
+    def evaluate_v6(self):
         king_middle_game_table = [
             [20, 30, 10, 0, 0, 10, 30, 20],
             [20, 20, 0, 0, 0, 0, 20, 20],
