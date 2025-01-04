@@ -625,6 +625,7 @@ class Board:
         mg_result = 0.0
         eg_result = 0.0
         material_count = 0
+        endgame_material_start = self.piece_values['r'] * 2 + self.piece_values['b'] + self.piece_values['n']
 
         for x in range(self.board.shape[0]):
             for y in range(self.board.shape[1]):
@@ -637,7 +638,7 @@ class Board:
                     table = position_tables[type_piece]
                     eg_table = eg_position_tables[type_piece]
 
-                    if type_piece not in 'k':
+                    if type_piece not in 'kp':
                         material_count += self.piece_values[type_piece]
 
                     if type_piece == 'k':
@@ -653,7 +654,7 @@ class Board:
                     else:
                         mg_result -= self.piece_values[type_piece] + table[7-x][y]
                         eg_result -= self.piece_values[type_piece] + eg_table[7-x][y]
-        phase = min(material_count / (2 * (self.piece_values['r'] * 2 + self.piece_values['b'] + self.piece_values['n'])), 1.0)
+        phase = min(material_count / (2 * endgame_material_start), 1.0)
         return (1 - phase) * eg_result + phase * mg_result
 
     def evaluate_v4(self):
