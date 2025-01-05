@@ -56,7 +56,7 @@ class ChessArena(QtWidgets.QWidget):
         super().__init__()
 
         self.playersList = None
-        uic.loadUi("Data/UI.ui", self)
+        uic.loadUi(parent_directory/ "Data/UI.ui", self)
 
         # Render for chess board
         self.chess_scene = QtWidgets.QGraphicsScene()
@@ -295,12 +295,12 @@ class ChessArena(QtWidgets.QWidget):
             return None
 
     def load_assets(self):
-        self.white_square = QtGui.QPixmap("Data/assets/light_square.png")
-        self.black_square = QtGui.QPixmap("Data/assets/dark_square.png")
+        self.white_square = QtGui.QPixmap("../Data/assets/light_square.png")
+        self.black_square = QtGui.QPixmap("../Data/assets/dark_square.png")
 
         self.pieces_imgs = {}
         for p in CHESS_PIECES:
-            image = QtGui.QImage("Data/assets/" + p + ".png")
+            image = QtGui.QImage("../Data/assets/" + p + ".png")
             self.pieces_imgs[p] = image
 
     def setup_board(self):
