@@ -1,31 +1,60 @@
 from Bots.ChessBotList import register_chess_bot
 from Bots.utils import Board, Move, order_moves2
 import time
-import csv
 
+import csv
+import os
+import random
+
+turn = 0
 
 def chess_bot(player_sequence, board, time_budget, **kwargs):
+
+    # Pour les stats
+    global turn
+    turn += 1
+    counter_leaf = 0
+    counter_evaluate = 0
+    csv_file = 'result.csv'
+    file_exists = os.path.exists(csv_file)
+    with open(csv_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+
+        # Si le fichier n'existe pas, ajoutez l'en-tête
+        if not file_exists:
+            writer.writerow(
+                ['Player_Bot', 'Profondeur', 'Temps_recursion', 'Nb de Feuilles', 'Nb d évaluations', 'Time budget',
+                 'turn', 'Fail'])
+
+
+
     time_limit = time.time() + time_budget * 0.95
     color = player_sequence[1]
     board: Board = Board(board, color)
     depth = 0
-    leaf = 0
     best_move: Move = Move((0, 0), (0, 0))
 
     memoization = {}
 
     def alpha_beta(board: Board, alpha, beta, depth, time_limit):
+        # Pour les stats
+        nonlocal counter_leaf
+        nonlocal counter_evaluate
+
         board_key = board.get_board_state_v2()
 
         if time.time() >= time_limit:
             raise TimeoutError("Time limit exceeded")
 
         if depth == 0 or board.is_game_over:
-            nonlocal leaf
-            leaf += 1
+            counter_leaf += 1
+
             if board_key in memoization:
                 return memoization[board_key][0], None
+
             else:
+                counter_evaluate += 1
+
                 evaluation = board.evaluate_v2()
                 memoization[board_key] = (evaluation, None, depth)
                 return evaluation, None
@@ -63,21 +92,48 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
 
         return best_evaluation, best_move
 
+    #depth = board.test_depth()
+    message_fail = "Coup Random"
+
+    list_random = board.get_movements().copy()
+    size = len(list_random)
+    test = random.randint(0, size - 1)
+    best_move = list_random[test]
+    resultS = ['AlphaBetaBotSortMoveMemov3', str(depth), str(0), str(0), str(0), str(time_budget), str(turn), str(True)]
+
     while (time_limit > time.time()):
-        leaf = 0
+        counter_leaf = 0  # Réinitialisation avant chaque itération
+        counter_evaluate = 0
         depth += 1
         try:
+            start = time.time()
             best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]
-            print(f'{depth}: {leaf}')
-            with open('test2.csv', mode='a', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow([str(depth), str(leaf)])
+            #print(f'{depth}: {leaf}')
+            #with open('test2.csv', mode='a', newline='') as file:
+             #   writer = csv.writer(file)
+              #  writer.writerow([str(depth), str(leaf)])
+
+            resultS = ['AlphaBetaBotSortMoveMemov3', str(depth), str(time.time() - start), str(counter_leaf),
+                       str(counter_evaluate),
+                       str(time_budget), str(turn), str(False)]
+            message_fail = ""
+
+
         except TimeoutError:
             depth -= 1
             break
-    
-    print("depth max :" + str(depth))
-    print(leaf)
+
+    print(message_fail)
+    # Pour les stats
+    with open(csv_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(resultS)
+    #counter_leaf = 0
+    #counter_evaluate = 0
+
+
+    #print("depth max :" + str(depth))
+    #print(leaf)
     return best_move.get_return_move()
 
 register_chess_bot('AlphaBetaBotSortMoveMemov3', chess_bot)

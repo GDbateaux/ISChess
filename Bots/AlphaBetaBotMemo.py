@@ -22,7 +22,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         if not file_exists:
             writer.writerow(['Player_Bot', 'Profondeur', 'Temps_recursion', 'Nb de Feuilles','Nb d évaluations', 'Time budget','turn','Fail'])
 
-    time_limit = time.time() + time_budget * 0.95
+    time_limit = time.time() + time_budget * 0.999
     color = player_sequence[1]
     board: Board = Board(board, color)
     depth = 0
@@ -82,7 +82,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         return best_evaluation, best_move
 
 
-    depth = 5
+    #depth = board.test_depth()
     message_fail = "Coup Random"
 
 
@@ -93,7 +93,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     resultS = ['AlphaBetaBotMemo', str(depth), str(0), str(0), str(0), str(time_budget), str(turn), str(True)]
 
     while (time_limit > time.time()):
-        #    depth += 1
+        depth += 1
         try:
             start = time.time()
             best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]

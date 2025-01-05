@@ -34,7 +34,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     time_limit = time.time() + time_budget * 0.95
     color = player_sequence[1]
     board: Board = Board(board, color)
-    depth = 2
+    depth = 0
     best_move:Move = Move((0,0), (0,0))
     print('time:')
 
@@ -74,7 +74,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
 
         return best_evaluation, best_move
 
-    while(time_limit > time.time()):
+    while(time_limit > time.time() and depth < 4):
         depth += 1
         try:
             start = time.time()

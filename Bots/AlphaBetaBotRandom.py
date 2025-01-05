@@ -88,7 +88,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
 
 
 
-    best_move: Move = alpha_beta_Random(board, float('-inf'), float('inf'), 4, start, time_budget - 0.05)[1]
+    best_move: Move = alpha_beta_Random(board, float('-inf'), float('inf'), board.test_depth(), start, time_budget - 0.001)[1]
 
     # Pour les stats
     with open(csv_file, mode='a', newline='') as file:

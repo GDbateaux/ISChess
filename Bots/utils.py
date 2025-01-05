@@ -353,7 +353,7 @@ class Board:
         return result
 
 
-    def evaluate_v2(self):
+    def evaluate_v3(self):
         king_middle_game_table = [
             [20, 30, 10, 0, 0, 10, 30, 20],
             [20, 20, 0, 0, 0, 0, 20, 20],
@@ -513,7 +513,7 @@ class Board:
                     result += (self.piece_values[type_piece] + table[x][y]) * coef
         return result
 
-    def evaluate_v3(self):
+    def evaluate_v2(self):
         def king_distance_to_edge(x, y):
             """Calcule la distance du roi aux bords de l'échiquier."""
             return min(x, 7 - x, y, 7 - y)
@@ -769,6 +769,9 @@ class Board:
         # Convertir le plateau en une structure immuable (tuple de tuples)
         return self.board_key, self.color_to_play
 
+
+    def test_depth(self):
+        return 7
 def orderMoves(moves: list[Move], board: Board, is_maximizing: bool):
     def evaluate_move(move: Move):
         board.make_move(move)

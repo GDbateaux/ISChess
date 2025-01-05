@@ -374,8 +374,8 @@ if __name__ == "__main__":
     set_nbr_turn_to_play = 100
     set_max_time_budget = 1
 
-    bots = ['AlphaBetaBotTimeMemo++2', 'AlphaBetaBotTimeMemo++eval3']
-    set_csv_file = "game_results.csv"
+    bots = ['RandomBot', 'MinMaxBot']
+    set_csv_file = "game_results2.csv"
 
     # Nombre de parties à jouer
     total_games = 10

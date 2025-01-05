@@ -33,7 +33,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
                  'turn','Fail'])
 
     print(player_sequence)
-    time_limit = time.time() + time_budget * 0.95
+    time_limit = time.time() + time_budget * 0.999
 
 
     color = player_sequence[1]
@@ -86,8 +86,9 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         return best_evaluation, best_move
 
     start = time.time()
-    depth = 4
-    best_move: Move = min_max(board, depth, start,time_budget - 0.05)[1]
+    depth = board.test_depth()
+    print(depth)
+    best_move: Move = min_max(board, depth, start,time_budget - 0.001)[1]
 
     # Pour les stats
     with open(csv_file, mode='a', newline='') as file:

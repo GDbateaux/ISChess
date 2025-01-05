@@ -1,5 +1,5 @@
 from Bots.ChessBotList import register_chess_bot
-from .utils import Board, Move, orderMoves, orderMoves_v3
+from .utils import Board, Move, orderMoves, order_moves2
 
 import time
 import csv
@@ -8,7 +8,7 @@ import os
 turn = 0
 
 num_leaf_visited = 0
-
+"""
 def chess_bot(player_sequence, board, time_budget, **kwargs):
     global num_leaf_visited
     num_leaf_visited = 0
@@ -116,3 +116,4 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
 
 
 register_chess_bot('AlphaBetaBotTimeSortMov_v3', chess_bot)
+"""

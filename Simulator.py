@@ -10,15 +10,14 @@ import numpy as np
 import csv
 import os
 
-
-set_nbr_turn_to_play = 700
-set_max_time_budget = 1.0
+set_nbr_turn_to_play = 300
+set_max_time_budget = 0.25
 
 set_players_AI = {
-            'w': CHESS_BOT_LIST['AlphaBetaBotTime'],  # Bot for 'w'
-            'b': CHESS_BOT_LIST['AlphaBetaBotTime_v3']  # Bot for 'b'
-        }
-set_csv_file = "game_results_V3_VS_V2.csv"
+
+}
+set_csv_file = "game_results.csv"
+
 
 # Wrap up for QApplication
 class ChessApp(QtWidgets.QApplication):
@@ -32,6 +31,7 @@ class ChessApp(QtWidgets.QApplication):
         arena.start()  # Configure le plateau
         arena.launch_game()  # Lance la partie immédiatement
         self.exec()
+
 
 # Main window to handle the chess board
 CHESS_PIECES = ["k", "q", "n", "b", "r", "p"]
@@ -50,7 +50,6 @@ CHESS_PIECES_NAMES = {
     "r": "Rook",
     "p": "Pawn",
 }
-
 
 
 class ChessArena(QtWidgets.QWidget):
@@ -93,7 +92,6 @@ class ChessArena(QtWidgets.QWidget):
 
         for cid, (color, bot) in enumerate(self.players_AI.items()):
             self.add_system_message(f"AI #{cid} ({COLOR_NAMES[color]}) = {bot.__name__}")
-
 
         self.nbr_turn_to_play = set_nbr_turn_to_play
         self.max_time_budget = set_max_time_budget
@@ -225,7 +223,7 @@ class ChessArena(QtWidgets.QWidget):
         player2_name = [bot for bot in CHESS_BOT_LIST if CHESS_BOT_LIST[bot] == self.players_AI['b']][0]
         winner_name = COLOR_NAMES[winner] if winner else "Draw"
         number_of_turns = set_nbr_turn_to_play  # Total turns played
-        time_per_turn = set_max_time_budget # Each turn time limit
+        time_per_turn = set_max_time_budget  # Each turn time limit
         real_turns = self.nbr_turn_to_play  # Total turns played
 
         # CSV file path
@@ -350,16 +348,35 @@ class ChessArena(QtWidgets.QWidget):
         self.setup_board()
         self.chess_scene.update()
 
+
 # Main execution
 if __name__ == "__main__":
+    #print(CHESS_BOT_LIST)
 
-    #Nombre de parties à jouer
-    total_games = 100
-    app = ChessApp()  # Create only one QApplication instance
+    #bots = ['MinMaxBot', 'AlphaBetaBot', 'AlphaBetaBotMemo', 'AlphaBetaRandom','AlphaBetaBotSortMov', 'AlphaBetaBotSortMoveMemov2', 'AlphaBetaBotSortMoveMemov3']
+    bots = ['AlphaBetaBotSortMov','AlphaBetaBotSortMoveMemov2', 'AlphaBetaBotSortMoveMemov3']
+    set_max_time_budget = 0.5
 
-    for game_number in range(total_games):
-        print(f"Starting game {game_number + 1} of {total_games}")
-        app.start()  # Start each game sequentially
+    for bot in bots:
+
+        # Créer une seule instance de l'application pour éviter des erreurs de gestion mémoire
+        app = ChessApp()
+        # Configuration des joueurs pour chaque bot
+        set_players_AI = {
+            'w': CHESS_BOT_LIST['AlphaBetaBotTime'],  # Bot pour 'w'
+            'b': CHESS_BOT_LIST[bots[1]]  # Bot pour 'b'
+        }
+        #set_players_AI = {
+         #   'w': CHESS_BOT_LIST[bots[2]],  # Bot pour 'w'
+          #  'b': CHESS_BOT_LIST['AlphaBetaBotTime']  # Bot pour 'b'
+        #}
+
+        while set_max_time_budget < 2.5:
+            print(f"Running {bot} with time budget: {set_max_time_budget:.2f}")
+
+            app.start()  # Démarrer chaque partie séquentiellement
+
+            set_max_time_budget += 0.5  # Incrémenter le budget de temps à chaque cycle
 
     print("Finished all games.")
 

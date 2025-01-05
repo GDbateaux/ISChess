@@ -8,11 +8,7 @@ import random
 
 turn = 0
 
-num_leaf_visited = 0
-
 def chess_bot(player_sequence, board, time_budget, **kwargs):
-    global num_leaf_visited
-    num_leaf_visited = 0
 
     # Pour les stats
     global turn
@@ -47,9 +43,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
 
         if depth == 0 or board.is_game_over:
             counter_leaf += 1
-            global num_leaf_visited
             counter_evaluate += 1
-            num_leaf_visited += 1
             return board.evaluate_v2(), None
 
         is_maximizing = board.board_color_top == board.color_to_play
@@ -77,25 +71,22 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
 
         return best_evaluation, best_move
 
-    depth = 5
-    message_fail = "Coup Random"
+    #depth = board.test_depth()
 
-    list_random = board.get_movements().copy()
-    size = len(list_random)
-    test = random.randint(0, size - 1)
-    best_move = list_random[test]
     resultS = ['AlphaBetaBotSortMov', str(depth), str(0), str(0), str(0), str(time_budget), str(turn), str(True)]
 
     while (time_limit > time.time()):
-        #    depth += 1
+        depth += 1
         try:
+            counter_leaf = 0
+            counter_evaluate = 0
             start = time.time()
             best_move = alpha_beta(board, float('-inf'), float('inf'), depth, time_limit)[1]
             resultS = ['AlphaBetaBotSortMov', str(depth), str(time.time() - start), str(counter_leaf),
                        str(counter_evaluate),
                        str(time_budget), str(turn), str(False)]
             message_fail = ""
-            break
+
         except TimeoutError:
             depth -= 1
             break
@@ -105,8 +96,8 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     with open(csv_file, mode='a', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(resultS)
-    counter_leaf = 0
-    counter_evaluate = 0
+    #counter_leaf = 0
+    #counter_evaluate = 0
 
     return best_move.get_return_move()
 

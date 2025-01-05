@@ -73,7 +73,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
         return best_evaluation, best_move
 
     start = time.time()
-    depth = 1
+    depth = 3
     color = player_sequence[1]
     board: Board = Board(board, color)
     best_move: Move = alpha_beta(board, float('-inf'), float('inf'), depth,start,time_budget - 0.001)[1]
@@ -81,7 +81,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
     # Pour les stats
     with open(csv_file, mode='a', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['AlphaBetaBot', str(depth), str(time.time() - start), str(counter_leaf),
+        writer.writerow(['AlphaBetaBot2', str(depth), str(time.time() - start), str(counter_leaf),
                          str(counter_leaf), str(time_budget), str(turn),str(fail)])
     counter_leaf = 0
 
@@ -91,4 +91,4 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
 
 
 
-register_chess_bot('AlphaBetaBot', chess_bot)
+register_chess_bot('AlphaBetaBot2', chess_bot)
