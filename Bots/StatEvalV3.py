@@ -25,7 +25,7 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             if board_key in memoization:
                 return memoization[board_key][0], None
             else:
-                evaluation = board.evaluate_v2()
+                evaluation = board.evaluate_v3()
                 memoization[board_key] = (evaluation, None, depth)
                 return evaluation, None
 
@@ -72,8 +72,11 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             depth -= 1
             break
     
+    with open('max_depths3.txt', 'a') as f:
+        f.write(f"{player_sequence[1]}: Max depth reached: {depth}\n")
+    
     print("depth max :" + str(depth))
     print(leaf)
     return best_move.get_return_move()
 
-register_chess_bot('AlphaBetaBotSortMoveMemov3', chess_bot)
+register_chess_bot('StatEvalV3', chess_bot)

@@ -223,8 +223,15 @@ class ChessArena(QtWidgets.QWidget):
         player2_name = [bot for bot in CHESS_BOT_LIST if CHESS_BOT_LIST[bot] == self.players_AI['b']][0]
         winner_name = COLOR_NAMES[winner] if winner else "Draw"
         number_of_turns = set_nbr_turn_to_play  # Total turns played
-        time_per_turn = set_max_time_budget # Each turn time limit
-        real_turns = self.nbr_turn_to_play  # Total turns played
+        time_per_turn = set_max_time_budget  # Each turn time limit
+        real_turns = number_of_turns - self.nbr_turn_to_play  # Actual turns played
+
+        # Count remaining pawns
+        white_pawns = sum(1 for row in self.board for cell in row if cell.endswith('w'))
+        black_pawns = sum(1 for row in self.board for cell in row if cell.endswith('b'))
+
+        # Convert the final board to a string (e.g., FEN or matrix format)
+        final_position = self.board_to_fen()
 
         # CSV file path
         csv_file = set_csv_file
@@ -235,11 +242,39 @@ class ChessArena(QtWidgets.QWidget):
             writer = csv.writer(file)
             if not file_exists:
                 # Write the header only once
-                writer.writerow(['White', 'Black', 'Winner', 'Total Turns', 'Time per Turn (s)', 'Real Turns'])
+                writer.writerow([
+                    'White', 'Black', 'Winner', 'Total Turns', 'Time per Turn (s)',
+                    'Real Turns', 'Final Position', 'White Pawns', 'Black Pawns'
+                ])
 
             # Write game data
-            writer.writerow([player1_name, player2_name, winner_name, number_of_turns, time_per_turn, real_turns])
+            writer.writerow([
+                player1_name, player2_name, winner_name, number_of_turns, time_per_turn,
+                real_turns, final_position, white_pawns, black_pawns
+            ])
 
+    def board_to_fen(self):
+        """
+        Convertit le plateau en notation FEN.
+        """
+        fen_rows = []
+        for row in self.board:
+            fen_row = ""
+            empty_count = 0
+            for cell in row:
+                if cell == "" or cell == "XX":  # Case vide ou invalide
+                    empty_count += 1
+                else:
+                    if empty_count > 0:
+                        fen_row += str(empty_count)
+                        empty_count = 0
+                    piece = cell[0].lower() if cell[1] == "b" else cell[0].upper()
+                    fen_row += piece
+            if empty_count > 0:
+                fen_row += str(empty_count)
+            fen_rows.append(fen_row)
+        return "/".join(fen_rows) + " w - - 0 1"
+        
     def select_and_load_board(self):
         path = QtWidgets.QFileDialog.getOpenFileName(
             self, "Select board", "C:\\Users\\Louis\\Desktop\\ISChess\\Data\\maps", "Board File (*.brd)"
@@ -371,40 +406,48 @@ class ChessArena(QtWidgets.QWidget):
 
 # Main execution
 if __name__ == "__main__":
-    set_nbr_turn_to_play = 100
+    set_nbr_turn_to_play = 120
+    total_games = 24
     set_max_time_budget = 1
 
-    bots = ['AlphaBetaBotTimeMemo++2', 'AlphaBetaBotTimeMemo++eval3']
-    set_csv_file = "game_results.csv"
+    bots = ['StatEvalV1', 'StatEvalV2', 'StatEvalV3', 'StatEvalV4']
 
-    # Nombre de parties à jouer
-    total_games = 10
-    app = ChessApp()  # Create only one QApplication instance
-    game_number = 0
+    # Application unique de Chess
+    app = ChessApp()  # Crée une seule instance de QApplication
 
+    # Charger les positions FEN depuis le fichier
     with open(current_file.parent / 'position.txt') as file:
-        for i, l in enumerate(file.readlines()):
-            if i >= total_games:
-                break
-            for j in range(2):
-                if j % 2 == 0:
-                    set_player = {
-                        'w': CHESS_BOT_LIST[bots[0]],  # Bot for 'w'
-                        'b': CHESS_BOT_LIST[bots[1]]  # Bot for 'b'
-                    }
-                else:
-                    set_player = {
-                        'b': CHESS_BOT_LIST[bots[0]],  # Bot for 'w'
-                        'w': CHESS_BOT_LIST[bots[1]]  # Bot for 'b'
-                    }
-                data = convert_from_fen(l)
+        fen_positions = [line.strip() for line in file.readlines()]
 
-                print(f"Starting game {game_number + 1} of {total_games}")
-                app.start(data, set_player)  # Start each game sequentially
-                game_number += 1
+    total_positions = len(fen_positions)
+    print(f"Loaded {total_positions} positions from file.")
 
-    print("Finished all games.")
+    # Pour chaque paire de bots
+    for i in range(len(bots)):
+        for j in range(i + 1, len(bots)):
+            bot1, bot2 = bots[i], bots[j]
+            set_csv_file = f"game_results_{bot1}_vs_{bot2}.csv"
+            print(f"Starting confrontation: {bot1} vs {bot2}")
 
+            # Recommencer l'index des parties pour chaque confrontation
+            for game_number in range(total_games):
+                fen_index = (game_number) % total_positions
+                fen = fen_positions[fen_index]
+                for k in range(2):
+                    # Alterner les couleurs pour chaque partie
+                    if (game_number + k) % 2 == 0:
+                        set_player = {'w': CHESS_BOT_LIST[bot1], 'b': CHESS_BOT_LIST[bot2]}
+                    else:
+                        set_player = {'b': CHESS_BOT_LIST[bot1], 'w': CHESS_BOT_LIST[bot2]}
+
+                    data = convert_from_fen(fen)
+
+                    print(f"Game {game_number} ({bot1} vs {bot2})")
+                    app.start(data, set_player)  # Lancer la partie
+
+            print(f"Finished confrontation: {bot1} vs {bot2}")
+
+    print("All confrontations completed.")
 
     def analyze_game_results(csv_file=set_csv_file):
         # Dictionnaires pour suivre les statistiques

@@ -72,8 +72,11 @@ def chess_bot(player_sequence, board, time_budget, **kwargs):
             depth -= 1
             break
     
+    with open('max_depths2.txt', 'a') as f:
+        f.write(f"{player_sequence[1]}: Max depth reached: {depth}\n")
+    
     print("depth max :" + str(depth))
     print(leaf)
     return best_move.get_return_move()
 
-register_chess_bot('AlphaBetaBotSortMoveMemov3', chess_bot)
+register_chess_bot('StatEvalV2', chess_bot)
