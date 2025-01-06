@@ -364,7 +364,7 @@ if __name__ == "__main__":
         # Configuration des joueurs pour chaque bot
         set_players_AI = {
             'w': CHESS_BOT_LIST['AlphaBetaBotTime'],  # Bot pour 'w'
-            'b': CHESS_BOT_LIST[bots[1]]  # Bot pour 'b'
+            'b': CHESS_BOT_LIST[bots[2]]  # Bot pour 'b'
         }
         #set_players_AI = {
          #   'w': CHESS_BOT_LIST[bots[2]],  # Bot pour 'w'

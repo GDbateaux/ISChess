@@ -372,10 +372,10 @@ class ChessArena(QtWidgets.QWidget):
 # Main execution
 if __name__ == "__main__":
     set_nbr_turn_to_play = 100
-    set_max_time_budget = 1
-
-    bots = ['RandomBot', 'MinMaxBot']
-    set_csv_file = "game_results2.csv"
+    set_max_time_budget = 2
+    # bots = ['MinMaxBot', 'AlphaBetaBot', 'AlphaBetaBotMemo', 'AlphaBetaRandom','AlphaBetaBotSortMov', 'AlphaBetaBotSortMoveMemov2', 'AlphaBetaBotSortMoveMemov3']
+    bots = ['AlphaBetaBotSortMoveMemov2', 'AlphaBetaBotSortMoveMemov3']
+    set_csv_file = "game_results3.csv"
 
     # Nombre de parties à jouer
     total_games = 10
